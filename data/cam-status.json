@@ -1,17 +1,17 @@
 {
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM1.jpg": {
-    "hash": "452e80fc4d24033da64ae6d609c2972e75e6ab80",
-    "lastChange": 1789805647000,
+    "hash": "45f0c1ffaaa3eba363cb4ba34bf11e5f2c6f91f3",
+    "lastChange": 1789805947000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM3.jpg": {
-    "hash": "e013c587be06b227b589061bc9f76af2cf187696",
-    "lastChange": 1789805646000,
+    "hash": "e63f11af9993d374f48d9d8ec9a21f70655e1632",
+    "lastChange": 1789805949000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM4.jpg": {
-    "hash": "615ede5f8182d748e56f2e532b501e0f2a26e673",
-    "lastChange": 1789805653000,
+    "hash": "d3994c855dba49c4b3dbc63fc22f8f5ff3ffc11b",
+    "lastChange": 1789805953000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=donau-airport.de/donau-airport.de/webcam/cam_neu2.jpg": {
@@ -20,13 +20,13 @@
     "source": "origin"
   },
   "https://wsrv.nl/?url=webcam-gewerbepark.ftp-land-in-sicht.de/snap_c1.jpg": {
-    "hash": "cfde6732000b9bb4ad9cfcf8f78e0f983cc6c1a5",
-    "lastChange": 1789805678000,
+    "hash": "9313296ebcce8fe9fbc59eedfd71ea9607b0624e",
+    "lastChange": 1789805963000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=webcam.datacreate.de/feldbergblick/webcam-feldbergblick.jpg": {
     "hash": "cc2c2272bb99aeb0a7bc4a84cb8a8ec04359668d",
-    "lastChange": 1789805643000,
+    "lastChange": 1789805883000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.feldberger-hof.de/static/webcam/fh-webcam.jpg": {
@@ -90,8 +90,8 @@
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.ziis.de/cam/mega.jpg": {
-    "hash": "d9b8ee18c32c923c11f0dabea83e350143ffa543",
-    "lastChange": 1789804788000,
+    "hash": "6755430f24990e36d7a0c6ad9621e8bda0430097",
+    "lastChange": 1789805986000,
     "source": "origin"
   }
 }

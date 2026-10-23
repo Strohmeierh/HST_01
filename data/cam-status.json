@@ -1,17 +1,17 @@
 {
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM1.jpg": {
-    "hash": "cdce5a6dd71ff24d1ea6650263f673d5fe4fe0a4",
-    "lastChange": 1792791263000,
+    "hash": "e0167707c26e4c6295287362aa789489e813030c",
+    "lastChange": 1792791562000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM3.jpg": {
-    "hash": "884f8f8be436a978e3bbc6ed7381af0a02d056d3",
-    "lastChange": 1792791263000,
+    "hash": "ccd2628d3ea86b245c927ff5c443910d30fd8cfb",
+    "lastChange": 1792791562000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM4.jpg": {
-    "hash": "721f6876195648cdfcd1a3c301a3d370a8c40846",
-    "lastChange": 1792791267000,
+    "hash": "e37b7b68c312e1b91f9582a9ef9d85d2a123d497",
+    "lastChange": 1792791566000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=images-webcams.windy.com/10/1471968410/current/original/1471968410.jpg": {
@@ -20,18 +20,18 @@
     "source": "origin"
   },
   "https://wsrv.nl/?url=roussis.ch/webcam/snapshot2.jpg": {
-    "hash": "31c5a48da0f6eac9f737323dcf76f357a2afbceb",
-    "lastChange": 1792791228000,
+    "hash": "f8780a1edc764e4376b078334d4856ef68078eba",
+    "lastChange": 1792791528000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=webcam-gewerbepark.ftp-land-in-sicht.de/snap_c1.jpg": {
-    "hash": "6d6b0647278b2845e01ed6f50f7ffd6dae7996a6",
-    "lastChange": 1792791262000,
+    "hash": "01946558583f926c8a6a332da8dc27720c3eb946",
+    "lastChange": 1792791561000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=webcam.datacreate.de/feldbergblick/webcam-feldbergblick.jpg": {
     "hash": "f2f0f782471e7b41b4768679763de764906207fb",
-    "lastChange": 1792791243000,
+    "lastChange": 1792791482000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.feldberger-hof.de/static/webcam/fh-webcam.jpg": {
@@ -75,13 +75,13 @@
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.notschrei-loipe.de/notschrei-loipe.jpg": {
-    "hash": "4af07a86a76225e5a8471f17af528e0ed6c30a91",
-    "lastChange": 1792791003000,
+    "hash": "66bedbc4f390419ae073e2de575d6a95dafdfbb8",
+    "lastChange": 1792791303000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.schopfheim.de/webcam/gersbach/video.jpg": {
-    "hash": "301645ed428c7eca7a2a5e2de0bfffb6def6c61f",
-    "lastChange": 1792791270000,
+    "hash": "896d56bc31e2152626b022c4c58cc829c5b99edb",
+    "lastChange": 1792791569000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.ziis.de/cam/current_WE.jpg": {
@@ -90,8 +90,8 @@
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.ziis.de/cam/mega.jpg": {
-    "hash": "366b2431302710f37ca203ea62a5d520f76a35db",
-    "lastChange": 1792790370000,
+    "hash": "004f11adb044c1ce5c9b5607e0bc62dacd070f25",
+    "lastChange": 1792791570000,
     "source": "origin"
   }
 }

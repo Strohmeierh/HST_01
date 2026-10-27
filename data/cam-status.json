@@ -1,12 +1,12 @@
 {
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM1.jpg": {
-    "hash": "0d63109657726c95e6cc63fa954155b5c2440d8b",
-    "lastChange": 1793075662000,
+    "hash": "591ee0b051db9df1fadb4018c40e72c116cea1c6",
+    "lastChange": 1793075932000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM3.jpg": {
-    "hash": "ae7a7fe539ac70464e46109e610500351e4815db",
-    "lastChange": 1793075662000,
+    "hash": "b06b39970b9217b447b1e32203113df41f30b7a0",
+    "lastChange": 1793075962000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM4.jpg": {
@@ -20,18 +20,18 @@
     "source": "origin"
   },
   "https://wsrv.nl/?url=roussis.ch/webcam/snapshot2.jpg": {
-    "hash": "3647d8d0d81e1c989ead233ed4998a71e092d782",
-    "lastChange": 1793075655000,
+    "hash": "31e778b44a7ed7c46a4397722d3519bb1a2d3cf2",
+    "lastChange": 1793075955000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=webcam-gewerbepark.ftp-land-in-sicht.de/snap_c1.jpg": {
-    "hash": "1e9f0e46eed857a88e179e532f77afd8ef1b7c22",
-    "lastChange": 1793075671000,
+    "hash": "602c7e3d393302610bbcf382867d2803ea4820e2",
+    "lastChange": 1793075956000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=webcam.datacreate.de/feldbergblick/webcam-feldbergblick.jpg": {
     "hash": "de1adfa82647b45ee60914e5ebea4d12465a8094",
-    "lastChange": 1793075643000,
+    "lastChange": 1793075882000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.feldberger-hof.de/static/webcam/fh-webcam.jpg": {
@@ -75,13 +75,13 @@
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.notschrei-loipe.de/notschrei-loipe.jpg": {
-    "hash": "d99882983d6739bef9f83a617b51adeca81e4fef",
-    "lastChange": 1793075403000,
+    "hash": "871e114b5f0ae6b4341c10b524a1f3211d4aeaaf",
+    "lastChange": 1793075703000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.schopfheim.de/webcam/gersbach/video.jpg": {
-    "hash": "123f06267b386d0c802c4c19f18ed6c57415fc41",
-    "lastChange": 1793075649000,
+    "hash": "b6d9cf73019e40f0f8ac555b0ec9db014cb7d248",
+    "lastChange": 1793075949000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.ziis.de/cam/current_WE.jpg": {
@@ -90,8 +90,8 @@
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.ziis.de/cam/mega.jpg": {
-    "hash": "00436ba4e35b9dd09d6277c934b8e744c6898427",
-    "lastChange": 1793074771000,
+    "hash": "e679dab15bfec8e1fbd80272e9c9d6c2f1dc71b7",
+    "lastChange": 1793075968000,
     "source": "origin"
   }
 }

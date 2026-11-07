@@ -1,12 +1,12 @@
 {
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM1.jpg": {
-    "hash": "3f44ee6c5a8eaec78055018b02c2774c127e46d2",
-    "lastChange": 1794017653000,
+    "hash": "c65fbb60d47b478e92f406bf0852e5c1a0404ece",
+    "lastChange": 1794017954000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM3.jpg": {
-    "hash": "f71b405e98c1823f56c8e197ee1b7b06c66a381c",
-    "lastChange": 1794017653000,
+    "hash": "c7079af5cb80bde507960412ec63c8884b3e7430",
+    "lastChange": 1794017954000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM4.jpg": {
@@ -20,8 +20,8 @@
     "source": "origin"
   },
   "https://wsrv.nl/?url=roussis.ch/webcam/snapshot2.jpg": {
-    "hash": "2c24c250f1741abc4a3434a6676020f8fe8dac94",
-    "lastChange": 1794017634000,
+    "hash": "f2ebe7a3e1db6b3159863c000c328040755d0df6",
+    "lastChange": 1794017931000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=webcam-gewerbepark.ftp-land-in-sicht.de/snap_c1.jpg": {
@@ -90,8 +90,8 @@
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.ziis.de/cam/mega.jpg": {
-    "hash": "d1599c2337932d31330c4ebe0d75fbb52dc758df",
-    "lastChange": 1794016763000,
+    "hash": "c82662940b13b0a7ceb2691c8f79b17630740b7e",
+    "lastChange": 1794017960000,
     "source": "origin"
   }
 }

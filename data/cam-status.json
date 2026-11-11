@@ -1,12 +1,12 @@
 {
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM1.jpg": {
-    "hash": "49e7402e30da01e4608eb6414618d4b9c1e96b6b",
-    "lastChange": 1794430638000,
+    "hash": "4f6b69a6116ca8c1ce6158c7d3c20d75f187d7c5",
+    "lastChange": 1794430758000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM3.jpg": {
-    "hash": "7cbe01bae7736e5eb315dfe4f2f1ead649b31d16",
-    "lastChange": 1794430668000,
+    "hash": "2d8f7e75324fc5587dc7f747d3c616521215faa2",
+    "lastChange": 1794430758000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM4.jpg": {
@@ -20,13 +20,13 @@
     "source": "origin"
   },
   "https://wsrv.nl/?url=roussis.ch/webcam/snapshot2.jpg": {
-    "hash": "edd56d60e5ecff21979a919ea716ee042f544f9a",
-    "lastChange": 1794430633000,
+    "hash": "9303b6fd1e42d2f80ad37714edfe735799d887e2",
+    "lastChange": 1794430753000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=webcam-gewerbepark.ftp-land-in-sicht.de/snap_c1.jpg": {
-    "hash": "0435cf5829ceaf6e9e55bc3732fbfcd71cbbb330",
-    "lastChange": 1794430674000,
+    "hash": "b0602eac7814f8965d3a9e65ce25aa5040a04a86",
+    "lastChange": 1794430779000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=webcam.datacreate.de/feldbergblick/webcam-feldbergblick.jpg": {
@@ -80,8 +80,8 @@
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.schopfheim.de/webcam/gersbach/video.jpg": {
-    "hash": "c743d61d78482f52b4e7c43bc6719d5c06a3f366",
-    "lastChange": 1794430695000,
+    "hash": "c3b4d98f10f7086814a93e5815a4eb26f0e65891",
+    "lastChange": 1794430759000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.ziis.de/cam/current_WE.jpg": {
@@ -90,8 +90,8 @@
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.ziis.de/cam/mega.jpg": {
-    "hash": "d6d7ca86769aec457e2d7ec2e52685e0e10741b5",
-    "lastChange": 1794429557000,
+    "hash": "31ad4519a297b9341f6aff8ff0924cc18a3bd8e3",
+    "lastChange": 1794430762000,
     "source": "origin"
   }
 }

@@ -1,12 +1,12 @@
 {
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM1.jpg": {
-    "hash": "3c40c8f084ba6a902301dcd8458e32597f61e84c",
-    "lastChange": 1794492840000,
+    "hash": "789d9d5ac66bdddc451e1dfc71f995981fb1bb22",
+    "lastChange": 1794493140000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM3.jpg": {
-    "hash": "f897ec0ac79dacf7ec1ef1d7c3f84bf2938049b4",
-    "lastChange": 1794492839000,
+    "hash": "7fcb67c2c41b11aacd8c00c2b1289d0313a71b32",
+    "lastChange": 1794493139000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM4.jpg": {
@@ -85,13 +85,13 @@
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.ziis.de/cam/current_WE.jpg": {
-    "hash": "d2edeb3ce6f3f961802482480c4ec0c32b622004",
-    "lastChange": 1794492602000,
+    "hash": "954777926cc05ae40305749ab1163a438aa5a9fb",
+    "lastChange": 1794493203000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.ziis.de/cam/mega.jpg": {
-    "hash": "8e1cb2d2492b6fa134e35ce5e54182b5b456d4a8",
-    "lastChange": 1794491960000,
+    "hash": "1ada7a53e215f544ef10fb304e60f79b937e6e5e",
+    "lastChange": 1794493156000,
     "source": "origin"
   }
 }

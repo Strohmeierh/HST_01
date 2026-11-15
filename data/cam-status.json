@@ -1,12 +1,12 @@
 {
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM1.jpg": {
-    "hash": "ac1a01450c6cfd84999f9d50d4fe3d1c7b48a726",
-    "lastChange": 1794726243000,
+    "hash": "6596ed0ea126b58d4e0b9a42659c2279ab3ed489",
+    "lastChange": 1794726543000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM3.jpg": {
-    "hash": "8a18fd75d914b8f5d6939302cfcf0fa048ebabc4",
-    "lastChange": 1794726244000,
+    "hash": "f80d3d5c772a83dd4c710af3dd5e2c9d22d08c8b",
+    "lastChange": 1794726544000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM4.jpg": {
@@ -20,9 +20,9 @@
     "source": "origin"
   },
   "https://wsrv.nl/?url=roussis.ch/webcam/snapshot2.jpg": {
-    "hash": "e79b6d1fa9fb33fe24117ee7aa6a215055bce854",
-    "lastChange": 1794726251000,
-    "source": "origin"
+    "hash": "dba214b118b65171ecc97573726bae1ad763d42c",
+    "lastChange": 1794726570540,
+    "source": "bot"
   },
   "https://wsrv.nl/?url=webcam-gewerbepark.ftp-land-in-sicht.de/snap_c1.jpg": {
     "hash": "7696c45764dd38c63aa3300ac88ba724cb8bd53d",
@@ -31,7 +31,7 @@
   },
   "https://wsrv.nl/?url=webcam.datacreate.de/feldbergblick/webcam-feldbergblick.jpg": {
     "hash": "2b7d7a222885b9780b0f6fc128f7fcf1875c363b",
-    "lastChange": 1794726243000,
+    "lastChange": 1794726482000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.feldberger-hof.de/static/webcam/fh-webcam.jpg": {
@@ -75,13 +75,13 @@
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.notschrei-loipe.de/notschrei-loipe.jpg": {
-    "hash": "6a1890e44817f5e5672e9d0b96f79adf241c05ed",
-    "lastChange": 1794726003000,
+    "hash": "64a7ae7a68e9bc85cebe728459d7974ec3009ccf",
+    "lastChange": 1794726302000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.schopfheim.de/webcam/gersbach/video.jpg": {
-    "hash": "7a00e75f08c77a353248932ea8f8d7e494bba41c",
-    "lastChange": 1794726268000,
+    "hash": "a1bceddc5484c5689f2d142ac222081c02217260",
+    "lastChange": 1794726569000,
     "source": "origin"
   },
   "https://wsrv.nl/?url=www.ziis.de/cam/current_WE.jpg": {

@@ -158,6 +158,55 @@
     .brf-item-value { font-size: 0.82rem; color: var(--accent); margin: 3px 0 4px 18px; }
     .brf-item-text { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; }
     .brf-note { font-size: 0.72rem; color: var(--text-muted); line-height: 1.5; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--card-border); }
+    .brf-new {
+      display: inline-block; font-size: 0.66rem; font-weight: 700; line-height: 1; letter-spacing: 0.03em;
+      color: #0f172a; background: var(--accent); border-radius: 999px; padding: 3px 6px; vertical-align: middle;
+    }
+    .brf-src { font-size: 0.72rem; color: var(--text-muted); margin: 4px 0 0 18px; line-height: 1.5; }
+    .brf-src a { color: var(--accent); text-decoration: none; }
+    .brf-src a:hover { text-decoration: underline; }
+
+    /* KI-Briefing: Header-Button (Lage-Punkt, Uhrzeit, „neu") + eigenes Detail-Fenster */
+    .ai-btn { position: relative; }
+    .ai-time { font-weight: 400; opacity: 0.8; }
+    .ai-time:not(:empty)::before { content: ' · '; }
+    .ai-warn:not(:empty) { margin-left: 4px; color: #fcd34d; }
+    .ai-new { margin-left: 4px; }
+    .ai-new[hidden] { display: none; }
+    .ai-dot.stale { background: transparent !important; box-shadow: inset 0 0 0 2px #64748b; }
+    .ai-dot.loading { animation: ai-pulse 1.2s ease-in-out infinite; }
+    @keyframes ai-pulse { 50% { opacity: 0.35; } }
+    .top-btn.ai-btn:hover .ai-new { background: var(--bg); color: var(--accent); }
+    #ai-modal .brf-modal-card { max-width: 640px; }
+    #ai-modal-content { overflow-wrap: anywhere; }
+    .ai-title-wrap { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+    .ai-meta { font-size: 0.75rem; font-weight: 400; color: var(--text-muted); }
+    #ai-modal-close { flex: none; }
+    .ai-headline { font-size: 1rem; font-weight: 600; display: flex; gap: 8px; align-items: center; color: var(--text); margin-top: 4px; }
+    /* Flugwetter + Thermik hervorgehoben; Randfarbe = Lage */
+    .ai-status { margin: 10px 0 2px; padding: 8px 10px; border-left: 3px solid #64748b; background: rgba(148, 163, 184, 0.10); border-radius: 0 6px 6px 0; }
+    .ai-st-row { display: flex; gap: 8px; align-items: baseline; font-size: 0.86rem; font-weight: 600; line-height: 1.45; color: var(--text); }
+    .ai-st-row + .ai-st-row { margin-top: 4px; }
+    .ai-st-row .brf-dot { transform: translateY(1px); }
+    .ai-st-row .ai-muted { font-size: 0.74rem; }
+    .ai-text { font-size: 0.85rem; line-height: 1.55; margin: 8px 0 12px; color: var(--text); }
+    .ai-text.ai-small { font-size: 0.78rem; color: var(--text-muted); margin: 8px 0 0; }
+    .ai-muted { color: var(--text-muted); font-weight: 400; }
+    .ai-banner { font-size: 0.78rem; line-height: 1.5; color: #fca5a5; background: rgba(239, 68, 68, 0.12); border-left: 3px solid #ef4444; padding: 6px 10px; margin: 0 0 10px; }
+    .ai-banner.warn { color: #fcd34d; background: rgba(245, 158, 11, 0.12); border-left-color: #f59e0b; }
+    .ai-banner a { color: inherit; text-decoration: underline; }
+    .ai-banner details { margin-top: 4px; color: var(--text-muted); word-break: break-word; }
+    .ai-kv { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px 12px; font-size: 0.78rem; margin: 0; }
+    .ai-kv dt { color: var(--text-muted); }
+    .ai-kv dd { margin: 0; color: var(--text); font-weight: 600; }
+    .ai-sec { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin: 14px 0 6px; }
+    .ai-row { font-size: 0.78rem; line-height: 1.5; padding: 4px 0; border-bottom: 1px solid var(--card-border); color: var(--text-muted); }
+    .ai-row b { color: var(--text); }
+    .ai-row .ai-prob { color: #fcd34d; }
+    .ai-row.ai-sub { padding-left: 14px; font-size: 0.74rem; }
+    .ai-row.ai-sub b { font-weight: 600; }
+    .ai-sub-head { font-size: 0.74rem; font-weight: 600; color: var(--text); margin: 8px 0 2px; }
+    .ai-cams summary { cursor: pointer; }
 
     /* === Wetter-Panel === */
     .wx-panel {
@@ -482,6 +531,12 @@
       display: none;
     }
     .radar-panel.open { display: block; }
+    /* Radar-Knopf und Radar-Karte sitzen oben im Wetter-Panel */
+    .wx-tools { display: flex; justify-content: center; margin: 0 0 12px; }
+    .wx-panel .radar-panel { margin: 0 0 16px; max-width: none; }
+    #radar-toggle[aria-expanded="true"] { background: var(--accent-dim); }
+    #radar-toggle .chev { transition: transform var(--ease); }
+    #radar-toggle[aria-expanded="true"] .chev { transform: rotate(180deg); }
 
     .radar-card {
       background-color: var(--card-bg);
@@ -742,8 +797,12 @@
       /* Buttons nebeneinander auf Mobile */
       .header-links { flex-direction: row; flex-wrap: nowrap; gap: 8px; }
       .header-links > button, .header-links > .dropdown { flex: 1; }
-      .header-links .top-btn { width: 100%; justify-content: center; padding: 10px 4px; font-size: 0.85rem; }
-      
+      .header-links .top-btn { width: 100%; justify-content: center; padding: 10px 4px; font-size: 0.85rem; min-width: 0; }
+      /* KI-Briefing mobil: Uhrzeit nur im Fenster, „neu" als Eckpunkt */
+      .ai-time { display: none; }
+      .ai-new { position: absolute; top: -4px; right: -2px; margin: 0; width: 10px; height: 10px; padding: 0;
+                font-size: 0; border: 2px solid var(--bg); }
+
       /* Dropdown-Menü Full-Width auf Mobile */
       .dropdown { position: static; }
       .dropdown-content { width: 100%; left: 0; transform: none; top: calc(100% + 4px); }
@@ -785,7 +844,7 @@
 
     /* === Reduzierte Bewegung respektieren === */
     @media (prefers-reduced-motion: reduce) {
-      .status-dot, .radar-marker::after { animation: none !important; }
+      .status-dot, .radar-marker::after, .ai-dot.loading { animation: none !important; }
       .media-container::after { animation-duration: 2s; }
       .cam-card { transition: border-color var(--ease); }
       .cam-card:hover { transform: none; }
@@ -815,14 +874,9 @@
         Wetter EDSF
       </button>
 
-      <button class="top-btn" id="radar-toggle" onclick="toggleRadar()" aria-expanded="false">
-        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="1.5"/>
-          <path d="M12 5a7 7 0 0 1 7 7"/>
-          <path d="M12 9a3 3 0 0 1 3 3"/>
-          <path d="M5 19a7 7 0 0 0 7-7"/>
-        </svg>
-        Radar EDSF
+      <button class="top-btn ai-btn" id="ai-toggle" type="button" onclick="openAiModal()" aria-haspopup="dialog" title="KI-Briefing">
+        <span class="brf-dot ai-dot loading" id="ai-dot" aria-hidden="true"></span>
+        KI-Briefing<span class="ai-time" id="ai-time"></span><span class="ai-warn" id="ai-warn" aria-hidden="true"></span><span class="brf-new ai-new" id="ai-new" hidden>neu</span>
       </button>
 
       <div class="dropdown">
@@ -847,9 +901,59 @@
   </header>
 
   <!-- Briefing-Ampel: Kurzüberblick, Klick öffnet die Erklärung im Detail-Fenster -->
-  <div id="briefing-bar" title="Kurz-Briefing – Klick für Werte &amp; Erklärung"></div>
+  <div id="briefing-bar" title="Ampel – Klick für Werte &amp; Erklärung"></div>
 
   <div class="wx-panel" id="wx-panel">
+    <div class="wx-tools">
+      <button class="top-btn" id="radar-toggle" type="button" onclick="toggleRadar()" aria-expanded="false" aria-controls="radar-panel">
+        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="1.5"/>
+          <path d="M12 5a7 7 0 0 1 7 7"/>
+          <path d="M12 9a3 3 0 0 1 3 3"/>
+          <path d="M5 19a7 7 0 0 0 7-7"/>
+        </svg>
+        Wetterradar <span class="chev" aria-hidden="true">▾</span>
+      </button>
+    </div>
+
+    <div class="radar-panel" id="radar-panel">
+      <div class="radar-card">
+        <div class="wx-card-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="1.5"/>
+            <path d="M12 5a7 7 0 0 1 7 7"/>
+            <path d="M12 9a3 3 0 0 1 3 3"/>
+            <path d="M5 19a7 7 0 0 0 7-7"/>
+          </svg>
+          Wetterradar – EDSF Hütten-Hotzenwald
+        </div>
+        <div class="radar-map loading" id="radar-map"></div>
+        <div class="radar-controls">
+          <button class="radar-btn" id="radar-prev" title="Vorheriger Frame" aria-label="Vorheriger Frame">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+          </button>
+          <button class="radar-btn" id="radar-play" title="Play/Pause" aria-label="Play/Pause">
+            <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+          </button>
+          <button class="radar-btn" id="radar-next" title="Nächster Frame" aria-label="Nächster Frame">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+          </button>
+          <div class="radar-scrubber" id="radar-scrubber">
+            <div class="radar-scrubber-thumb" id="radar-scrubber-thumb"></div>
+          </div>
+          <button class="radar-speed" id="radar-speed" title="Geschwindigkeit">1×</button>
+          <button class="radar-layer-toggle" id="radar-clouds" title="Wolken (Satellitenbild) ein-/ausblenden. Tagsüber Echtfarben, nachts Infrarot – dünner Bodennebel ist nachts nur eingeschränkt erkennbar." aria-pressed="true">☁ Wolken</button>
+        </div>
+        <div class="radar-info">
+          <div>
+            <span class="radar-frame-time" id="radar-frame-time">--:--</span>
+            <span class="radar-frame-tag" id="radar-frame-tag">JETZT</span>
+          </div>
+          <div id="radar-updated">Regen: <a href="https://www.rainviewer.com/" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">RainViewer</a> · Vorhersage: <a href="https://www.dwd.de/" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">DWD RV</a> · Wolken: <a href="https://view.eumetsat.int/" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">EUMETSAT</a></div>
+        </div>
+      </div>
+    </div>
+
     <div class="wx-card">
       <div class="wx-card-title">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -880,44 +984,6 @@
         Thermik – Modellabschätzung
       </div>
       <div id="thermik-content"></div>
-    </div>
-  </div>
-
-  <div class="radar-panel" id="radar-panel">
-    <div class="radar-card">
-      <div class="wx-card-title">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="1.5"/>
-          <path d="M12 5a7 7 0 0 1 7 7"/>
-          <path d="M12 9a3 3 0 0 1 3 3"/>
-          <path d="M5 19a7 7 0 0 0 7-7"/>
-        </svg>
-        Wetterradar – EDSF Hütten-Hotzenwald
-      </div>
-      <div class="radar-map loading" id="radar-map"></div>
-      <div class="radar-controls">
-        <button class="radar-btn" id="radar-prev" title="Vorheriger Frame" aria-label="Vorheriger Frame">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
-        </button>
-        <button class="radar-btn" id="radar-play" title="Play/Pause" aria-label="Play/Pause">
-          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
-        </button>
-        <button class="radar-btn" id="radar-next" title="Nächster Frame" aria-label="Nächster Frame">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
-        </button>
-        <div class="radar-scrubber" id="radar-scrubber">
-          <div class="radar-scrubber-thumb" id="radar-scrubber-thumb"></div>
-        </div>
-        <button class="radar-speed" id="radar-speed" title="Geschwindigkeit">1×</button>
-        <button class="radar-layer-toggle" id="radar-clouds" title="Wolken (Satellitenbild) ein-/ausblenden. Tagsüber Echtfarben, nachts Infrarot – dünner Bodennebel ist nachts nur eingeschränkt erkennbar." aria-pressed="true">☁ Wolken</button>
-      </div>
-      <div class="radar-info">
-        <div>
-          <span class="radar-frame-time" id="radar-frame-time">--:--</span>
-          <span class="radar-frame-tag" id="radar-frame-tag">JETZT</span>
-        </div>
-        <div id="radar-updated">Regen: <a href="https://www.rainviewer.com/" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">RainViewer</a> · Vorhersage: <a href="https://www.dwd.de/" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">DWD RV</a> · Wolken: <a href="https://view.eumetsat.int/" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">EUMETSAT</a></div>
-      </div>
     </div>
   </div>
 
@@ -1071,6 +1137,16 @@
 
       <div class="cam-card">
         <div class="cam-header">
+          <a href="https://belchen.it-wms.com/" target="_blank" rel="noopener">Belchen</a>
+          <span class="status-dot"></span>
+        </div>
+        <div class="media-container">
+          <img class="live-cam" data-src="https://wsrv.nl/?url=belchen.it-wms.com/panorama1_raw.jpg" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="640" height="360" alt="Belchen Panorama">
+        </div>
+      </div>
+
+      <div class="cam-card">
+        <div class="cam-header">
           <a href="https://www.schauinslandbahn.de/de/service/webcam" target="_blank" rel="noopener">Schauinsland (Bergstation)</a>
           <span class="status-dot age-unknown" title="Live-Frame – keine Altersprüfung"></span>
         </div>
@@ -1087,11 +1163,10 @@
       <div class="cam-card">
         <div class="cam-header">
           <a href="https://flugplatzschupfart.roundshot.com/#/" target="_blank" rel="noopener">Flugplatz Schupfart</a>
-          <span class="status-dot age-unknown" title="Live-Frame – keine Altersprüfung"></span>
+          <span class="status-dot"></span>
         </div>
-        <div class="media-container loaded">
-          <div class="iframe-overlay"></div>
-          <iframe data-src="https://flugplatzschupfart.roundshot.com/#/" loading="lazy" title="Webcam Flugplatz Schupfart"></iframe>
+        <div class="media-container">
+          <img class="live-cam" data-src="https://wsrv.nl/?url=flugplatzschupfart.roundshot.com/cams/632/medium" data-crop="cx=560&amp;cy=0&amp;cw=800&amp;ch=450&amp;precrop" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="640" height="360" alt="Flugplatz Schupfart, Blick nach Norden zum Hotzenwald">
         </div>
       </div>
 
@@ -1156,6 +1231,41 @@
       </div>
 
     </div>
+
+    <h2 class="section-title">Fluggebiete</h2>
+    <div class="cam-grid">
+
+      <div class="cam-card">
+        <div class="cam-header">
+          <a href="https://passwang.roundshot.com/" target="_blank" rel="noopener">Passwang</a>
+          <span class="status-dot"></span>
+        </div>
+        <div class="media-container">
+          <img class="live-cam" data-src="https://wsrv.nl/?url=passwang.roundshot.com/cams/1961/medium" data-crop="cx=160&amp;cy=0&amp;cw=800&amp;ch=450&amp;precrop" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="640" height="360" alt="Passwang, Blick über das Mittelland zu den Alpen">
+        </div>
+      </div>
+
+      <div class="cam-card">
+        <div class="cam-header">
+          <a href="https://hotelweissenstein.roundshot.com/" target="_blank" rel="noopener">Weissenstein</a>
+          <span class="status-dot"></span>
+        </div>
+        <div class="media-container">
+          <img class="live-cam" data-src="https://wsrv.nl/?url=hotelweissenstein.roundshot.com/cams/726/medium" data-crop="cx=400&amp;cy=0&amp;cw=800&amp;ch=450&amp;precrop" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="640" height="360" alt="Weissenstein, Blick über das Mittelland zu den Alpen">
+        </div>
+      </div>
+
+      <div class="cam-card">
+        <div class="cam-header">
+          <a href="https://www.windy.com/webcams/1406140938" target="_blank" rel="noopener">Raichberg</a>
+          <span class="status-dot"></span>
+        </div>
+        <div class="media-container">
+          <img class="live-cam" data-src="https://wsrv.nl/?url=images-webcams.windy.com/38/1406140938/current/original/1406140938.jpg" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="640" height="360" alt="Raichberg, Albtrauf und Albvorland">
+        </div>
+      </div>
+
+    </div>
   </main>
 
   <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Kamera-Grossansicht">
@@ -1173,10 +1283,10 @@
     </div>
   </div>
 
-  <div class="brf-modal" id="brf-modal" role="dialog" aria-modal="true" aria-label="Briefing-Details">
+  <div class="brf-modal" id="brf-modal" role="dialog" aria-modal="true" aria-label="Ampel-Details">
     <div class="brf-modal-backdrop"></div>
     <div class="brf-modal-card">
-      <h3>Kurz-Briefing erklärt
+      <h3>Ampel erklärt
         <button class="lightbox-close" id="brf-modal-close" type="button" aria-label="Schliessen">×</button>
       </h3>
       <div id="brf-modal-content"></div>
@@ -1185,6 +1295,20 @@
       </div>
       <div style="text-align:center;margin-top:14px;">
         <button class="top-btn" id="brf-modal-wx" type="button">Alle Wetterdetails öffnen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KI-Briefing: Detail-Fenster (Inhalt aus data/ai_status.json, alles über escHtml) -->
+  <div class="brf-modal" id="ai-modal" role="dialog" aria-modal="true" aria-labelledby="ai-modal-title">
+    <div class="brf-modal-backdrop"></div>
+    <div class="brf-modal-card">
+      <h3><span class="ai-title-wrap"><span id="ai-modal-title">KI-Briefing</span><span class="ai-meta" id="ai-modal-meta"></span></span>
+        <button class="lightbox-close" id="ai-modal-close" type="button" aria-label="Schliessen">×</button>
+      </h3>
+      <div id="ai-modal-content"></div>
+      <div class="brf-note">
+        <strong>KI-generiert, ohne Gewähr.</strong> Automatische Einschätzung aus Webcam-Bildern, Messwerten und Modellprognose (Claude von Anthropic); sie kann falsch oder überholt sein. Massgebend sind die offizielle Flugwetterberatung (DWD, MeteoSchweiz), AIP, NOTAM und DABS, die Flugleitung am Platz und die eigene Beobachtung.
       </div>
     </div>
   </div>
@@ -1339,7 +1463,8 @@
         img.classList.add('loaded');
         container.classList.add('loaded');
       };
-      fresh.src = bust(displayUrl(base), ts);
+      // data-crop: Ausschnitt eines Panoramas (nur Anzeige; data-src bleibt der Status-Schlüssel)
+      fresh.src = bust(displayUrl(base + (img.dataset.crop ? '&' + img.dataset.crop : '')), ts);
 
       applyStatusToCam(img);
     }
@@ -1418,6 +1543,7 @@
     setInterval(function () { if (!document.hidden) refreshCams(); }, REFRESH_MS);
     document.addEventListener('visibilitychange', function () {
       if (!document.hidden) refreshCams();
+      if (!document.hidden && Date.now() - ai.loadedAt > 600000) loadAi();
     });
     if (lastEl) lastEl.textContent = nowStr();
 
@@ -1438,6 +1564,7 @@
       storeSet('edsf-wx-open', open ? '1' : null);
       if (open && !wxLoaded) { wxLoaded = true; loadWetter(); }
       if (open) { loadOpenMeteo(); loadThermik(); }
+      syncRadar();   // das Wetterradar liegt im Wetter-Panel: mit dem Panel starten bzw. pausieren
     };
 
     // Briefing-Ampel braucht frische Daten auch bei geschlossenem Panel
@@ -1447,6 +1574,7 @@
       loadOpenMeteo();
       loadThermik();
       loadWetter();
+      loadAi();
     }, 600000);
 
     /* ── Briefing-Ampel: verdichtet Kernwerte zu farbigen Chips ────
@@ -1496,7 +1624,7 @@
         out.push({
           color: R, chip: 'Regen jetzt', title: 'Niederschlag',
           value: 'es regnet aktuell am Platz',
-          text:  'Aktuelle Regenrate der Wetterstation EDSF. Für die Entwicklung: Radar-Panel und Regen-Zeile im 12-h-Trend.'
+          text:  'Aktuelle Regenrate der Wetterstation EDSF. Für die Entwicklung: Wetterradar im Wetter-Panel und Regen-Zeile im 12-h-Trend.'
         });
       } else if (briefing.rainProb !== undefined) {
         out.push({
@@ -1504,7 +1632,7 @@
           chip:  'Regen ' + Math.round(briefing.rainProb) + ' %',
           title: 'Regenwahrscheinlichkeit',
           value: Math.round(briefing.rainProb) + ' % (Maximum der nächsten 12 h)',
-          text:  'Höchste Regenwahrscheinlichkeit der nächsten 12&nbsp;Stunden laut Open-Meteo. Ab 30&nbsp;% gelb, über 60&nbsp;% rot. Zeitliche Verteilung: Regen-Zeile im 12-h-Trend, Zugbahnen im Radar.'
+          text:  'Höchste Regenwahrscheinlichkeit der nächsten 12&nbsp;Stunden laut Open-Meteo. Ab 30&nbsp;% gelb, über 60&nbsp;% rot. Zeitliche Verteilung: Regen-Zeile im 12-h-Trend, Zugbahnen im Wetterradar.'
         });
       }
       return out;
@@ -1545,6 +1673,377 @@
       m.classList.remove('open');
       document.body.style.overflow = '';
     }
+
+    /* ── HTML-Escape für alle Fremd- und KI-Texte ───────────────────── */
+    function escHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    /* ── KI-Briefing (data/ai_status.json, 3× täglich vom Job: 08:00, 11:00, 14:30) ──
+       Der Inhalt ist KI-Text und damit untrusted: jeder String läuft über escHtml oder eine feste Map.
+       Bei einem Fehlschlag behält die Datei das letzte gute Briefing (ok=false, error, attempted_at_utc). */
+    var AI_SEEN_KEY = 'edsf-ai-seen', AI_STALE_MIN = 360, AI_RUNNING_MIN = 10, AI_GREY = '#64748b',
+        AI_SLOT_LATE_MIN = 30,             // Button zeigt die geplante Zeit, solange das Briefing höchstens so spät kam
+        AI_TZ = 'Europe/Berlin';
+    // wie FIXED_SLOTS / SLOT_MIN_AFTER_SUNRISE in scripts/ai_briefing.py
+    var AI_SLOTS = ['08:00', '11:00', '14:30'], AI_SLOT_MIN_AFTER_SUNRISE = 20;
+    // Höhen im Schweizer Format «1'400 m»; wie SWISS_M_RE in ai_briefing.py, ohne Lookbehind (ältere Safari)
+    var AI_SWISS_M = /(^|[^\d.,:'’])([1-9]\d?)[.’]?(\d{3})(?=(?:\s*(?:–|-|bis|und|\/)\s*\d{1,2}['.’]?\d{3})*\s*(?:m|Metern?|ft)(?![A-Za-zÄÖÜäöü\d]))/g;
+    function aiSwiss(s) { return String(s == null ? '' : s).replace(AI_SWISS_M, "$1$2'$3"); }
+    function aiThousands(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "'"); }
+    // Höhenbänder aus DABS/dipul («5000FT AMSL», «2300 ft MSL»): nur Zahlen direkt vor FT/M
+    function aiSwissAlt(s) {
+      return String(s == null ? '' : s).replace(/(^|[^\d.,:'’])([1-9]\d{0,2})(\d{3})(?=\s*(?:FT|M)(?![A-Za-zÄÖÜäöü\d]))/gi, "$1$2'$3");
+    }
+    function aiMeter(v) {                  // Höhe aus dem Datensatz: 1400 -> «1'400 m ü. M.»
+      return (typeof v === 'number' && isFinite(v)) ? aiThousands(Math.round(v)) + ' m ü. M.' : null;
+    }
+    var ai = { data: undefined, loadedAt: 0 };          // undefined = lädt, null = keine Datei
+    var AI_LAGE = {
+      gut:      { label: 'gut',      color: '#10b981' },
+      maessig:  { label: 'mässig',   color: '#f59e0b' },
+      schlecht: { label: 'schlecht', color: '#ef4444' }
+    };
+    var AI_TH_STUFE = { gut: '#10b981', maessig: '#f59e0b', keine: '#64748b' };
+    var AI_MAPS = {
+      basis_quelle: { kamera: 'Kamera', metar: 'METAR', taupunkt: 'Taupunkt', kombiniert: 'kombiniert', keine_wolken: 'keine Wolken', unbekannt: '' },
+      sicht:        { gut: 'gut', maessig: 'mässig', schlecht: 'schlecht', unbekannt: '–' },
+      nebel:        { kein: 'kein', dunst: 'Dunst', bodennebel: 'Bodennebel', hochnebel: 'Hochnebel', unbekannt: '–' },
+      niederschlag: { kein: 'kein', in_der_ferne: 'in der Ferne', am_platz: 'am Platz', unbekannt: '–' },
+      region:       { platz: 'Platz', hotzenwald: 'Hotzenwald', suedschwarzwald: 'Südschwarzwald', baar_alb: 'Baar und Alb', hochrhein_jura: 'Hochrhein und Jura' },
+      problem:      { nacht: 'Nacht', zu_dunkel: 'zu dunkel', eingefroren: 'Bild eingefroren', linse_nass: 'Linse nass', verschmutzt: 'Linse verschmutzt', fehlbild: 'Fehlbild' },
+      thermik_gebiet: { schwarzwald: 'Schwarzwald', alb: 'Schwäbische Alb', jura: 'Jura' },
+      thermik_region: { hotzenwald: 'Hotzenwald', hochschwarzwald: 'Feldberg/Hochschwarzwald', mittl_schwarzwald: 'Mittlerer Schwarzwald',
+                        nordschwarzwald: 'Nordschwarzwald', westalb: 'Westalb/Heuberg', mittlere_alb: 'Mittlere Alb',
+                        jura_ost: 'Jura Ost (Passwang–Weissenstein)', jura_west: 'Jura West (Chasseral–Freiberge)' },
+      risiko:       { gering: 'gering', mittel: 'mittel', hoch: 'hoch' }
+    };
+    function aiHas(map, k) { return typeof k === 'string' && Object.prototype.hasOwnProperty.call(map, k); }
+    function aiMap(map, v) {               // Map-Werte sind feste, HTML-sichere Konstanten
+      if (v === null || v === undefined || v === '') return '–';
+      return aiHas(map, v) ? (map[v] || '–') : escHtml(v);
+    }
+    function aiStr(v) { return typeof v === 'string' ? v : ''; }
+    function aiObj(v) { return (v && typeof v === 'object' && !Array.isArray(v)) ? v : null; }
+    function aiNum(v, unit) { return (typeof v === 'number' && isFinite(v)) ? v + unit : null; }
+    function aiDate(s) { var t = Date.parse(s); return (typeof s === 'string' && !isNaN(t)) ? new Date(t) : null; }
+    function aiHM(d)  { return d.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit', timeZone: AI_TZ }); }
+    function aiDay(d) { return d.toLocaleDateString('sv-SE', { timeZone: AI_TZ }); }
+    function aiDM(d)  { return d.toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', timeZone: AI_TZ }); }
+    function aiWhen(d, now) {              // «HH:MM» heute, «gestern HH:MM», sonst «TT.MM. HH:MM»
+      if (aiDay(d) === aiDay(now)) return aiHM(d);
+      if (aiDay(d) === aiDay(new Date(now.getTime() - 86400000))) return 'gestern ' + aiHM(d);
+      return aiDM(d) + ' ' + aiHM(d);
+    }
+    function aiSlotHM(d, gen) {            // Button: geplante Briefing-Zeit («11:00» statt «11:03»)
+      var hm = aiHM(gen), p = aiDate(d.slot_planned_utc), plan = '';
+      if (p && aiDay(p) === aiDay(gen)) plan = aiHM(p);
+      else if (d.ok === true && typeof d.slot === 'string') plan = d.slot;
+      var hmMin = function (s) { var m = /^(\d{2}):(\d{2})$/.exec(s); return m ? (+m[1]) * 60 + (+m[2]) : NaN; };
+      var late = hmMin(hm) - hmMin(plan);   // spät nachgeholt: echte Uhrzeit, damit nichts älter wirkt
+      return (late >= 0 && late <= AI_SLOT_LATE_MIN) ? plan : hm;
+    }
+    function aiSlotWhen(d, gen, now) {     // wie aiWhen, aber mit der geplanten Briefing-Zeit
+      var hm = aiSlotHM(d, gen);
+      if (aiDay(gen) === aiDay(now)) return hm;
+      if (aiDay(gen) === aiDay(new Date(now.getTime() - 86400000))) return 'gestern ' + hm;
+      return aiDM(gen) + ' ' + hm;
+    }
+    function aiNextSlot(now) {             // grob wie im Job: 08:00 (im Hochwinter frühestens 20 min nach Sonnenaufgang), 11:00, 14:30
+      var s = calcSunTimes(47.633, 7.941), m = /^(\d{2}):(\d{2})$/.exec(s.rise || ''), slots = AI_SLOTS.slice();
+      if (m) {
+        var early = (+m[1]) * 60 + (+m[2]) + AI_SLOT_MIN_AFTER_SUNRISE + 1;
+        early += (5 - early % 5) % 5;
+        slots = slots.map(function (hm) {
+          var x = /^(\d{2}):(\d{2})$/.exec(hm);
+          if ((+x[1]) * 60 + (+x[2]) >= early) return hm;
+          return ('0' + Math.floor(early / 60)).slice(-2) + ':' + ('0' + (early % 60)).slice(-2);
+        });
+      }
+      var cur = aiHM(now);
+      for (var i = 0; i < slots.length; i++) if (slots[i] > cur) return 'ca. ' + slots[i];
+      return 'morgen ca. ' + slots[0];
+    }
+
+    function loadAi() {
+      return fetch('data/ai_status.json?t=' + Date.now(), { cache: 'no-store' })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (d) { ai.data = (d && typeof d === 'object' && !Array.isArray(d)) ? d : null; })
+        .catch(function () { if (ai.data === undefined) ai.data = null; })   // Aussetzer: letzten Stand behalten
+        .then(function () { ai.loadedAt = Date.now(); renderAiButton(); if (aiModalOpen()) renderAiModal(); });
+    }
+
+    // kind: loading | none | ok | stale; dazu failed (letzter Versuch fehlgeschlagen) und running (läuft gerade)
+    function aiState() {
+      var d = ai.data, now = new Date();
+      if (d === undefined) return { kind: 'loading' };
+      if (!d) return { kind: 'none' };
+      var b = aiObj(d.briefing);
+      var st = { kind: 'none', data: d, b: b, gen: aiDate(d.generated_at_utc), tri: aiDate(d.attempted_at_utc),
+                 lage: null, isNew: false, failed: false, running: false };
+      if (d.ok === false && st.tri) {
+        if ((now - st.tri) / 60000 < AI_RUNNING_MIN) st.running = true; else st.failed = true;
+      }
+      if (!b || !st.gen) return st;
+      st.lage = aiHas(AI_LAGE, b.lage) ? b.lage : null;
+      var fresh = (now - st.gen) / 60000 < AI_STALE_MIN && aiDay(st.gen) === aiDay(now);
+      st.kind = fresh ? 'ok' : 'stale';
+      st.isNew = fresh && storeGet(AI_SEEN_KEY) !== String(d.generated_at_utc);
+      return st;
+    }
+
+    function renderAiButton() {
+      var btn = document.getElementById('ai-toggle'), dot = document.getElementById('ai-dot'),
+          tm = document.getElementById('ai-time'), nw = document.getElementById('ai-new'),
+          wn = document.getElementById('ai-warn');
+      if (!btn || !dot || !tm || !nw) return;
+      var st = aiState(), now = new Date(), time = '', label = 'KI-Briefing';
+      dot.className = 'brf-dot ai-dot';
+      dot.style.background = AI_GREY;
+      if (st.kind === 'loading') {
+        dot.classList.add('loading');
+        label += ', wird geladen';
+      } else if (st.kind === 'none') {
+        label += st.running ? ', wird gerade erstellt' : ', noch keines vorhanden';
+      } else {
+        if (st.kind === 'ok') {
+          time = aiSlotHM(st.data, st.gen);
+          if (st.lage) { dot.style.background = AI_LAGE[st.lage].color; label += ', Flugwetter ' + AI_LAGE[st.lage].label; }
+        } else {
+          time = aiSlotWhen(st.data, st.gen, now);
+          dot.classList.add('stale');
+          label += ', veraltet';
+        }
+        label += ', Stand ' + aiWhen(st.gen, now);
+        if (st.failed)  label += ', letzte Aktualisierung fehlgeschlagen';
+        if (st.running) label += ', wird gerade aktualisiert';
+      }
+      tm.textContent = time;
+      if (wn) wn.textContent = st.failed ? '⚠' : '';
+      nw.hidden = !st.isNew;
+      btn.title = label;
+      btn.setAttribute('aria-label', label);
+    }
+
+    function aiThermikToday(d, st, now) {  // Thermikdaten nur, wenn das Briefing aktuell ist und von heute stammt
+      var t = aiObj(d.thermik);
+      return (st.kind === 'ok' && t && t.tag === aiDay(now)) ? t : null;
+    }
+    function aiThermikHtml(d, st, now) {
+      var t = aiThermikToday(d, st, now);
+      if (!t) return '';
+      var regs = Array.isArray(t.regionen) ? t.regionen.filter(aiObj) : [];
+      var geb = Array.isArray(t.gebiete) ? t.gebiete.filter(aiObj) : [];
+      function hm(s) { return (typeof s === 'string' && /^\d{2}:\d{2}$/.test(s)) ? s : null; }
+      function m(v) { return (typeof v === 'number' && isFinite(v)) ? aiThousands(Math.round(v)) + ' m' : null; }
+      var windH = m(t.wind_hoehe_m) || "1'500 m";
+      var html = '<div class="ai-sec">Thermik (Prognose)</div>';
+      if (aiStr(t.zusammenfassung)) html += '<div class="ai-text ai-small" style="margin:0 0 6px;">' + escHtml(aiSwiss(t.zusammenfassung)) + '</div>';
+      Object.keys(AI_MAPS.thermik_gebiet).forEach(function (g) {
+        var satz = '', rows = '';
+        geb.forEach(function (x) { if (x.gebiet === g && !satz) satz = aiStr(x.satz); });
+        Object.keys(AI_MAPS.thermik_region).forEach(function (k) {
+          regs.forEach(function (r) {
+            if (r.region !== k || r.gebiet !== g) return;
+            var von = hm(r.von), bis = hm(r.bis), ah = m(r.arbeitshoehe_m), ba = m(r.basis_m), parts = [];
+            if (r.nutzbar === true && von && bis && ah) {
+              var ue = (typeof r.ueber_kamm_m === 'number' && isFinite(r.ueber_kamm_m)) ? Math.round(r.ueber_kamm_m) : null;
+              parts.push(von + '–' + bis,
+                'Arbeitshöhe ≈ ' + ah + (ue === null ? '' : (ue > 0 ? ' (≈ ' + aiThousands(ue) + ' m über den Höhen)' : ' (kaum über den Höhen)')),
+                r.blau === true ? 'Blauthermik' : (ba ? 'Basis ≈ ' + ba : 'Cumulus'));
+            } else {
+              parts.push('keine nutzbare Thermik' + (aiStr(r.grund) ? ' (' + escHtml(r.grund) + ')' : ''));
+            }
+            if (aiHas(AI_MAPS.risiko, r.risiko) && r.risiko !== 'gering') parts.push('<span class="ai-prob">Gewitterrisiko ' + AI_MAPS.risiko[r.risiko] + '</span>');
+            var w = aiNum(r.wind_kt, ' kt');
+            if (r.wind_stark === true && w) parts.push('<span class="ai-prob">Wind ' + windH + ' ' + w + (r.nutzbar === true ? ' (zerrissen, Lee)' : ' (stark, Lee)') + '</span>');
+            rows += '<div class="ai-row ai-sub"><b>' + AI_MAPS.thermik_region[k] + '</b> ' + parts.join(' · ') + '</div>';
+          });
+        });
+        if (!satz && !rows) return;
+        html += '<div class="ai-sub-head">' + AI_MAPS.thermik_gebiet[g] + '</div>' +
+          (satz ? '<div class="ai-row">' + escHtml(aiSwiss(satz)) + '</div>' : '') + rows;
+      });
+      return html + '<div class="ai-text ai-small">Modellabschätzung (Parcel-Methode, Open-Meteo), ersetzt kein Emagramm.</div>';
+    }
+
+    function aiEdrHtml(e, now) {           // temporäre ED-R aus dipul: Trefferliste vom Programm, Daten unverändert
+      var html = '<div class="ai-sub-head">Temporäre ED-R Deutschland (dipul)</div>';
+      var abg = aiDate(e.abgerufen_utc);
+      if (e.ok !== true || !abg) return html + '<div class="ai-row">Auszug nicht verfügbar – bitte die Originalquellen prüfen.</div>';
+      if (aiDay(abg) !== aiDay(now)) return html + '<div class="ai-row">Der Auszug ist nicht von heute und wird nicht mehr angezeigt.</div>';
+      var hits = Array.isArray(e.treffer) ? e.treffer.filter(aiObj) : [];
+      hits.forEach(function (t) {
+        html += '<div class="ai-row"><b>' + escHtml(aiStr(t.name) || 'ohne Namen') + '</b> ' + escHtml(aiStr(t.zeit)) + ' · ' +
+          escHtml(aiSwissAlt((aiStr(t.unten) || '?') + ' bis ' + (aiStr(t.oben) || '?'))) +
+          (t.unsicher === true ? ' ⚠ <span class="ai-prob">Angaben unvollständig</span>' : '') + '</div>';
+      });
+      if (!hits.length) html += '<div class="ai-row">Keine temporären Flugbeschränkungsgebiete (§ 17 LuftVO) im Filter.</div>';
+      var tot = (typeof e.eintraege_total === 'number' && isFinite(e.eintraege_total))
+        ? ' · ' + hits.length + ' von ' + e.eintraege_total + ' Einträgen in Deutschland' : '';
+      return html + '<div class="brf-src">Abgerufen ' + aiDM(abg) + ' ' + aiHM(abg) + tot +
+        (aiStr(e.filter) ? ' · ' + escHtml(e.filter) : '') +
+        ' · Quelle: <a href="https://www.dipul.de/homepage/de/informationen/geografische-gebiete/wfs-wms/" target="_blank" rel="noopener noreferrer">dipul</a>,' +
+        ' Lizenz <a href="https://creativecommons.org/licenses/by-nd/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-ND 4.0</a></div>';
+    }
+    function aiDabsHtml(x, now) {          // DABS-Auszug: Trefferliste vom Programm, nicht von der KI
+      var html = '<div class="ai-sub-head">DABS Schweiz (Nordschweiz und Jura)</div>';
+      var stand = aiDate(x.stand_utc);
+      var tag = /^\d{4}-\d{2}-\d{2}$/.test(aiStr(x.datum)) ? aiDate(x.datum + 'T12:00:00+00:00') : null;
+      if (x.ok !== true || !stand || !tag) return html + '<div class="ai-row">DABS nicht auswertbar – bitte das Original öffnen.</div>';
+      if (aiDay(tag) !== aiDay(now)) return html + '<div class="ai-row">Der Auszug ist nicht von heute und wird nicht mehr angezeigt.</div>';
+      var hits = Array.isArray(x.treffer) ? x.treffer.filter(aiObj) : [];
+      hits.forEach(function (t) {
+        var kopf = [aiStr(t.gebiet), aiStr(t.notam)].filter(Boolean).join(' · ') || 'Eintrag';
+        var band = aiSwissAlt((aiStr(t.unten) || '?') + ' bis ' + (aiStr(t.oben) || '?'));
+        html += '<div class="ai-row"><b>' + escHtml(kopf) + '</b> ' + escHtml(aiStr(t.zeit)) + ' · ' + escHtml(band) +
+          (t.unsicher === true ? ' ⚠ <span class="ai-prob">nicht eindeutig lesbar</span>' : '') +
+          '<br>' + escHtml(aiStr(t.text)) +
+          (t.karte === false ? ' <span class="ai-muted">· nicht auf der DABS-Karte</span>' : '') + '</div>';
+      });
+      if (!hits.length) html += '<div class="ai-row">Keine DABS-Einträge im Filter.</div>';
+      var ver = (typeof x.version === 'number' && isFinite(x.version)) ? 'Version ' + x.version + ', ' : '';
+      var tot = (typeof x.eintraege_total === 'number' && isFinite(x.eintraege_total))
+        ? ' · ' + hits.length + ' von ' + x.eintraege_total + ' Einträgen' : '';
+      return html + '<div class="brf-src">Stand ' + ver + aiDM(stand) + ' ' + aiHM(stand) + ' (Zeiten in Lokalzeit)' + tot +
+        (aiStr(x.filter) ? ' · ' + escHtml(x.filter) : '') + ' · neue Versionen um 09:00, 13:00 und 16:00 · ' +
+        '<a href="https://www.skybriefing.com/o/dabs?today" target="_blank" rel="noopener noreferrer">Original-DABS (PDF)</a></div>';
+    }
+    function aiLuftraumHtml(d, now) {      // Pflichthinweis + Links + ED-R (dipul) + DABS
+      var e = aiObj(d.edr), x = aiObj(d.dabs);
+      if (!e && !x) return '';
+      var html = '<div class="ai-sec">Luftraum – erste Richtung</div>' +
+        '<div class="ai-banner warn"><b>Nur eine erste Richtung, ersetzt kein NOTAM- und DABS-Briefing.</b> ' +
+        'Automatische Auszüge, unvollständig und ohne NOTAM; Aktivierungen fester Gebiete (z. B. ED-R Heuberg, TRA) fehlen. Vor dem Flug prüfen: ' +
+        '<a href="https://ais.dfs.de/pilotservice/" target="_blank" rel="noopener noreferrer">DFS AIS-Portal (NOTAM, VFReBulletin)</a> · ' +
+        '<a href="https://ais.dfs.de/pilotservice/briefing/aup/aup_edit.jsp" target="_blank" rel="noopener noreferrer">DFS WebAUP (ED-R/TRA)</a> · ' +
+        '<a href="https://www.skybriefing.com/o/dabs?today" target="_blank" rel="noopener noreferrer">DABS (PDF)</a></div>';
+      if (e) html += aiEdrHtml(e, now);
+      if (x) html += aiDabsHtml(x, now);
+      return html;
+    }
+
+    function aiModalHtml() {
+      var st = aiState(), now = new Date(), html = '';
+      var sched = 'Erstellt wird es dreimal täglich (08:00, 11:00 und 14:30; im Hochwinter das erste kurz nach Sonnenaufgang).';
+      if (st.kind === 'loading') return '<div class="ai-text">Wird geladen…</div>';
+      if (st.running) html += '<div class="ai-banner warn">Wird gerade aktualisiert…</div>';
+      if (st.kind === 'none') {
+        if (st.failed) html += '<div class="ai-banner">Der letzte Versuch' + (st.tri ? ' (' + aiWhen(st.tri, now) + ')' : '') + ' ist fehlgeschlagen.</div>';
+        return html + '<div class="ai-text">Noch kein KI-Briefing vorhanden. ' + sched + '</div>';
+      }
+      var d = st.data, b = st.b;
+      var sky = aiObj(d.himmel) || {};
+      if (st.kind === 'stale') {
+        html += '<div class="ai-banner warn">Briefing von ' + aiSlotWhen(d, st.gen, now) + ' – die Lage kann sich inzwischen geändert haben.</div>';
+      }
+      if (st.failed) {
+        html += '<div class="ai-banner">Letzte Aktualisierung' + (st.tri ? ' um ' + aiWhen(st.tri, now) : '') +
+          ' fehlgeschlagen; angezeigt wird das Briefing von ' + aiSlotWhen(d, st.gen, now) + '.' +
+          (d.error ? '<details><summary>Technische Details</summary>' + escHtml(d.error) + '</details>' : '') + '</div>';
+      }
+      var lg = st.lage ? AI_LAGE[st.lage] : null;
+      var dot = function (c) { return '<span class="brf-dot" style="background:' + c + '"></span>'; };
+      html += '<div class="ai-headline">' + dot(lg ? lg.color : AI_GREY) + '<span>' + escHtml(aiSwiss(b.headline || '')) + '</span></div>';
+
+      // Flugwetter und Thermik hervorgehoben; Farben nur aus festen Maps, nie aus dem Datensatz
+      var th = aiThermikToday(d, st, now);
+      html += '<div class="ai-status" style="border-left-color:' + (lg ? lg.color : AI_GREY) + '">' +
+        '<div class="ai-st-row">' + dot(lg ? lg.color : AI_GREY) + '<span>Flugwetter: ' + (lg ? lg.label : '–') + '</span></div>';
+      if (th && aiStr(th.kurz)) {
+        html += '<div class="ai-st-row">' + dot(aiHas(AI_TH_STUFE, th.stufe) ? AI_TH_STUFE[th.stufe] : AI_GREY) +
+          '<span>Thermik (Prognose): ' + escHtml(aiSwiss(th.kurz)) + '</span></div>';
+      }
+      html += '</div>';
+      html += '<div class="ai-text">' + escHtml(aiSwiss(aiStr(b.text))) + '</div>';
+
+      var basis = aiMeter(sky.wolkenbasis_m), bq = aiMap(AI_MAPS.basis_quelle, sky.basis_quelle);
+      var sichtTxt = aiMap(AI_MAPS.sicht, sky.sicht), sk = aiNum(sky.sicht_km, ' km');
+      var nebelTxt = aiMap(AI_MAPS.nebel, sky.nebel), nog = aiMeter(sky.nebel_obergrenze_m);
+      var schnee = aiMeter(sky.schneegrenze_m);
+      var rows = [
+        ['Bedeckung',    aiNum(sky.bedeckung_achtel, '/8') || '–'],
+        ['Wolkenbasis',  basis ? basis + (bq !== '–' ? ' <span class="ai-muted">(' + bq + ')</span>' : '') : '–'],
+        ['Sicht',        sk ? (sichtTxt !== '–' ? sichtTxt + ' (≈ ' + sk + ')' : '≈ ' + sk) : sichtTxt],
+        ['Nebel',        nog ? nebelTxt + ' bis ' + nog : nebelTxt],
+        ['Schneegrenze', schnee ? '≈ ' + schnee : '–'],
+        ['Niederschlag', aiMap(AI_MAPS.niederschlag, sky.niederschlag)]
+      ];
+      html += '<div class="ai-sec">Himmel</div><dl class="ai-kv">';
+      rows.forEach(function (r) { html += '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>'; });
+      html += '</dl>';
+
+      var regs = Array.isArray(sky.regionen) ? sky.regionen : [], regHtml = '';
+      Object.keys(AI_MAPS.region).forEach(function (k) {
+        regs.forEach(function (r) {
+          if (r && r.region === k && aiStr(r.zustand)) regHtml += '<div class="ai-row"><b>' + AI_MAPS.region[k] + '</b> ' + escHtml(aiSwiss(r.zustand)) + '</div>';
+        });
+      });
+      if (regHtml) html += '<div class="ai-sec">Regionen</div>' + regHtml;
+      html += aiThermikHtml(d, st, now);
+      html += aiLuftraumHtml(d, now);
+
+      var cams = Array.isArray(d.kameras) ? d.kameras.filter(aiObj) : [];
+      if (cams.length) {
+        var camHtml = '';
+        cams.forEach(function (k) {
+          var p = (k.problem && k.problem !== 'keins') ? aiMap(AI_MAPS.problem, k.problem) : '';
+          var age = (typeof k.bildalter_min === 'number' && isFinite(k.bildalter_min))
+            ? ' <span class="ai-muted">(Bild ' + Math.round(k.bildalter_min) + ' min alt)</span>' : '';
+          var tags = Array.isArray(k.tags) ? k.tags.filter(function (t) { return typeof t === 'string'; })
+            .map(function (t) { return escHtml(t.replace(/_/g, ' ')); }).join(', ') : '';
+          camHtml += '<div class="ai-row"><b>' + escHtml(aiStr(k.titel)) + '</b>' + age +
+            (p ? ' ⚠ <span class="ai-prob">' + p + '</span>' : '') + '<br>' + escHtml(aiSwiss(aiStr(k.satz))) +
+            (tags ? ' <span class="ai-muted">· ' + tags + '</span>' : '') + '</div>';
+        });
+        html += '<details class="ai-cams"><summary class="ai-sec">Kameras (' + cams.length + ')</summary>' + camHtml + '</details>';
+      }
+      return html;   // Zeit des Briefings und nächstes Briefing stehen in der Titelzeile (aiMetaText)
+    }
+    function aiMetaText() {                // hinter «KI-Briefing»: Datum + Briefing-Zeit (11:00, 14:30), nächstes Briefing
+      var st = aiState(), now = new Date(), parts = [];
+      if (st.kind === 'loading') return '';
+      if (st.kind === 'ok' || st.kind === 'stale') parts.push(aiDM(st.gen) + ' ' + aiSlotHM(st.data, st.gen));
+      var next = aiNextSlot(now);
+      if (next) parts.push('nächstes Briefing ' + next);
+      return parts.join(' · ');
+    }
+    function renderAiModal() {
+      var c = document.getElementById('ai-modal-content'), meta = document.getElementById('ai-modal-meta');
+      if (!c) return;
+      try {
+        c.innerHTML = aiModalHtml();
+        if (meta) meta.textContent = aiMetaText();
+      } catch (e) {
+        c.innerHTML = '<div class="ai-text">Das KI-Briefing kann gerade nicht angezeigt werden.</div>';
+        if (meta) meta.textContent = '';
+      }
+    }
+    function aiModalOpen() {
+      var m = document.getElementById('ai-modal');
+      return !!(m && m.classList.contains('open'));
+    }
+    function openAiModal() {
+      var m = document.getElementById('ai-modal');
+      if (!m) return;
+      renderAiModal();
+      m.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      var st = aiState();
+      if (st.isNew) { storeSet(AI_SEEN_KEY, String(st.data.generated_at_utc)); renderAiButton(); }
+      if (Date.now() - ai.loadedAt > 120000) loadAi();
+    }
+    function closeAiModal() {
+      var m = document.getElementById('ai-modal');
+      if (!m || !m.classList.contains('open')) return;
+      m.classList.remove('open');
+      document.body.style.overflow = '';
+      var b = document.getElementById('ai-toggle');
+      if (b) b.focus();
+    }
+    window.openAiModal = openAiModal;
 
     /* ── Wetterdaten EDSF ─────────────────────────────────────── */
     function loadWetter() {
@@ -1652,10 +2151,10 @@
       // QNH
       var pressVal = f(d.press, 1) + '&nbsp;hPa';
       var trendStr = '';
-      if (d.presstrend != null) {
-          var pt = parseFloat(String(d.presstrend).replace(',', '.'));
-          var sign = pt >= 0 ? '+' : '';
-          trendStr = '<span style="white-space: nowrap;">Trend: ' + sign + f(d.presstrend, 1) + '&nbsp;hPa/h</span>';
+      // Cumulus liefert den Trend als «presstrendval» (früher hier fälschlich «presstrend» gelesen)
+      var pt = parseFloat(String(d.presstrendval == null ? '' : d.presstrendval).replace(',', '.'));
+      if (!isNaN(pt)) {
+          trendStr = '<span style="white-space: nowrap;">Trend: ' + (pt >= 0 ? '+' : '') + f(pt, 1) + '&nbsp;hPa/h</span>';
       }
 
       // Regenrate & Niederschlag heute
@@ -2209,13 +2708,14 @@
       cloudsOn: storeGet('edsf-radar-clouds') !== '0'
     };
 
-    window.toggleRadar = function () {
-      var panel = document.getElementById('radar-panel');
-      var btn   = document.getElementById('radar-toggle');
-      var open  = panel.classList.toggle('open');
-      btn.setAttribute('aria-expanded', open);
-      storeSet('edsf-radar-open', open ? '1' : null);
-      if (open) {
+    // Das Radar liegt im Wetter-Panel: sichtbar nur, wenn beide offen sind. Leaflet nie in einem
+    // versteckten Container initialisieren; Animation und Refresh ruhen bei geschlossenem Panel.
+    function radarVisible() {
+      var wp = document.getElementById('wx-panel'), rp = document.getElementById('radar-panel');
+      return !!(wp && rp && wp.classList.contains('open') && rp.classList.contains('open'));
+    }
+    function syncRadar() {
+      if (radarVisible()) {
         if (!radar.initialized) {
           radar.initialized = true;
           initRadar();
@@ -2229,6 +2729,14 @@
         stopRadarAnim();
         clearRadarRefresh();
       }
+    }
+    window.toggleRadar = function () {
+      var panel = document.getElementById('radar-panel');
+      var btn   = document.getElementById('radar-toggle');
+      var open  = panel.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open);
+      storeSet('edsf-radar-open', open ? '1' : null);
+      syncRadar();
     };
 
     function loadLeaflet(cb) {
@@ -2297,7 +2805,7 @@
 
         bindRadarControls();
         loadRadarData(true);
-        ensureRadarRefresh();
+        if (radarVisible()) ensureRadarRefresh();   // Panel evtl. während des Ladens geschlossen
       });
     }
 
@@ -2761,6 +3269,19 @@
         if (e.key === 'Escape' && m.classList.contains('open')) closeBrfModal();
       });
     })();
+
+    // KI-Briefing: Detail-Fenster schliessen per Hintergrund, × und Escape
+    (function () {
+      var m = document.getElementById('ai-modal');
+      if (!m) return;
+      m.querySelector('.brf-modal-backdrop').addEventListener('click', closeAiModal);
+      document.getElementById('ai-modal-close').addEventListener('click', closeAiModal);
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && m.classList.contains('open')) closeAiModal();
+      });
+    })();
+    renderAiButton();
+    loadAi();
 
     // Briefing-Ampel und Thermik auch ohne offenes Panel laden
     loadOpenMeteo();

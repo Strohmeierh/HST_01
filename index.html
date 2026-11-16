@@ -1923,67 +1923,90 @@
     };
     var HB_WT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
     function aiHmOk(s) { return typeof s === 'string' && /^\d{2}:\d{2}$/.test(s); }
+    // Nur der aktuelle Status (Wunsch 16.11. nachmittags), mit der Uhrzeit beim Anzeigen gerechnet.
+    // Ausserhalb eines gemeldeten Fensters immer «… gemeldet», nie «frei» oder «inaktiv».
+    function aiHbZeit(dt, now) {           // «22:30» heute (Ende um Mitternacht «24:00»), sonst «Mi 18.11. 16:00»
+      var hm = aiHM(dt);
+      if (aiDay(dt) === aiDay(now)) return hm;
+      if (hm === '00:00' && aiDay(new Date(dt.getTime() - 60000)) === aiDay(now)) return '24:00';
+      var noon = aiDate(aiDay(dt) + 'T12:00:00Z');
+      return (noon ? HB_WT[noon.getUTCDay()] + ' ' : '') + aiDM(dt) + ' ' + hm;
+    }
+    function aiHbA(a, now) {               // lvl 2 = jetzt aktiv, 1 = heute noch aktiv, 0 = sonst
+      if (!a || a.ok !== true) return { txt: 'nicht auswertbar', lvl: 0 };
+      var ah = aiObj(a.heute), nowHM = aiHM(now), r;
+      if (!ah || ah.datum !== aiDay(now)) return { txt: 'für heute keine Meldung', lvl: 0 };
+      if (ah.kein_schiessen === true) r = { txt: 'nicht aktiv gemeldet (kein Schiessen)', lvl: 0 };
+      else if (aiHmOk(ah.von) && aiHmOk(ah.bis) && ah.von < ah.bis) {
+        if (nowHM < ah.von) r = { txt: 'aktiv ab ' + ah.von + ' (bis ' + ah.bis + ')', lvl: 1 };
+        else if (nowHM < ah.bis) r = { txt: 'aktiv bis ' + ah.bis, lvl: 2 };
+        else r = { txt: 'seit ' + ah.bis + ' nicht mehr aktiv gemeldet', lvl: 0 };
+      } else return { txt: 'nicht auswertbar', lvl: 0 };
+      if (ah.unsicher === true) r.txt += ' (Angabe unsicher)';
+      return r;
+    }
+    function aiHbB(b, now) {
+      var bad = { txt: 'nicht auswertbar', lvl: 0, next: '' };
+      if (!b || b.ok !== true) return bad;
+      var t = now.getTime(), i;
+      if (Array.isArray(b.fenster_utc)) {
+        var raw = [], wins = [];
+        for (i = 0; i < b.fenster_utc.length; i++) {
+          var p = b.fenster_utc[i], s = Array.isArray(p) ? aiDate(p[0]) : null, e = Array.isArray(p) ? aiDate(p[1]) : null;
+          if (!s || !e || e <= s) return bad;
+          raw.push([s.getTime(), e.getTime()]);
+        }
+        raw.sort(function (x, y) { return x[0] - y[0]; });
+        raw.forEach(function (w) {          // anschliessende oder überlappende Fenster zusammenfassen
+          var l = wins[wins.length - 1];
+          if (l && w[0] <= l[1]) l[1] = Math.max(l[1], w[1]); else wins.push([w[0], w[1]]);
+        });
+        wins = wins.filter(function (w) { return w[1] > t; });
+        var fmt = function (w) {
+          var s = new Date(w[0]), e = new Date(w[1]);
+          return aiHbZeit(s, now) + '–' + (aiDay(s) === aiDay(e) ? aiHM(e) : aiHbZeit(e, s));
+        };
+        var w0 = wins[0];
+        if (w0 && w0[0] <= t) return { txt: 'aktiv bis ' + aiHbZeit(new Date(w0[1]), now), lvl: 2, next: wins[1] ? fmt(wins[1]) : '' };
+        if (w0 && aiDay(new Date(w0[0])) === aiDay(now)) {
+          return { txt: 'aktiv ab ' + aiHM(new Date(w0[0])) + ' (bis ' + aiHbZeit(new Date(w0[1]), now) + ')', lvl: 1,
+                   next: wins[1] ? fmt(wins[1]) : '' };
+        }
+        return { txt: 'nicht aktiv gemeldet', lvl: 0, next: w0 ? fmt(w0) : '' };
+      }
+      // Records ohne fenster_utc (14:30-Record vom 16.11.): Texte «17:00–22:30» oder mehrtägig
+      var bh = Array.isArray(b.heute) ? b.heute.filter(function (x) { return typeof x === 'string' && x; }) : [];
+      var nowHM = aiHM(now), nx = aiStr(b.naechstes), m;
+      for (i = 0; i < bh.length; i++) {
+        m = /^(\d{2}:\d{2})–(\d{2}:\d{2})$/.exec(bh[i]);
+        if (!m) return { txt: 'aktiv gemeldet: ' + bh[i], lvl: 2, next: nx };
+        if (nowHM < m[2]) {
+          return nowHM >= m[1] ? { txt: 'aktiv bis ' + m[2], lvl: 2, next: nx }
+                               : { txt: 'aktiv ab ' + m[1] + ' (bis ' + m[2] + ')', lvl: 1, next: nx };
+        }
+      }
+      return { txt: 'nicht aktiv gemeldet', lvl: 0, next: nx };
+    }
     function aiHeuberg(d, now) {
       var h = aiObj(d.heuberg), abg = h ? aiDate(h.abgerufen_utc) : null;
       if (!h || !abg || aiDay(abg) !== aiDay(now)) return null;
-      var a = aiObj(h.a), b = aiObj(h.b), aTxt, bTxt, aktiv = false, nowHM = aiHM(now);
-      if (a && a.ok === true) {
-        var ah = aiObj(a.heute);
-        if (ah && ah.kein_schiessen === true) aTxt = 'A kein Schiessen gemeldet';
-        else if (ah && aiHmOk(ah.von) && aiHmOk(ah.bis)) {
-          aTxt = 'A Schiesszeit ' + ah.von + '–' + ah.bis + (ah.bis <= nowHM ? ' (vorbei)' : '');
-          if (ah.bis > nowHM) aktiv = true;
-        } else aTxt = 'A heute nicht gemeldet';
-        if (ah && ah.unsicher === true) aTxt += ' (Angabe unsicher)';
-      } else aTxt = 'A nicht auswertbar';
-      if (b && b.ok === true) {
-        var bh = Array.isArray(b.heute) ? b.heute.filter(function (s) { return typeof s === 'string' && s; }) : [];
-        if (bh.length) { bTxt = 'B heute ' + bh.join(', '); aktiv = true; }
-        else bTxt = 'B heute kein Fenster gemeldet';
-      } else bTxt = 'B nicht auswertbar';
-      return { kurz: escHtml(aTxt) + ' · ' + escHtml(bTxt), color: aktiv ? AI_LAGE.schlecht.color : AI_GREY, h: h, a: a, b: b, abg: abg };
+      var a = aiHbA(aiObj(h.a), now), b = aiHbB(aiObj(h.b), now), lvl = Math.max(a.lvl, b.lvl);
+      return { a: a, b: b, abg: abg, kurz: escHtml('A ' + a.txt) + ' · ' + escHtml('B ' + b.txt),
+               color: lvl === 2 ? AI_LAGE.schlecht.color : (lvl === 1 ? AI_LAGE.maessig.color : AI_GREY) };
     }
     function aiHeubergHtml(d, now) {
-      var hb = aiHeuberg(d, now), html = '<div class="ai-sub-head">ED-R 132 Heuberg (A und B)</div>';
+      var hb = aiHeuberg(d, now), html = '<div class="ai-sub-head">ED-R 132 Heuberg (A und B) – aktueller Status</div>';
       if (!hb) {
         html += '<div class="ai-row">Kein Auszug von heute – bitte die Quellen unten öffnen.</div>';
       } else {
-        var rows = '';
-        if (hb.a && hb.a.ok === true) {
-          var ah = aiObj(hb.a.heute), heute;
-          if (ah && ah.kein_schiessen === true) heute = 'heute laut Schiesswarnung kein Schiessen gemeldet';
-          else if (ah && aiHmOk(ah.von) && aiHmOk(ah.bis)) heute = 'heute Schiesszeit ' + ah.von + '–' + ah.bis;
-          else heute = 'für heute keine lesbare Schiesswarnung';
-          if (ah && ah.unsicher === true) heute += ' <span class="ai-prob">(Datum in der Quelle fehlerhaft, Angabe unsicher)</span>';
-          var folge = Array.isArray(hb.a.folgetage) ? hb.a.folgetage.filter(aiObj).map(function (t) {
-            var dt = /^\d{4}-\d{2}-\d{2}$/.test(aiStr(t.datum)) ? aiDate(t.datum + 'T12:00:00Z') : null;
-            if (!dt) return '';
-            var tag = HB_WT[dt.getUTCDay()] + ' ' + aiDM(dt), u = t.unsicher === true ? ' (unsicher)' : '';
-            if (t.kein_schiessen === true) return tag + ' kein Schiessen' + u;
-            return (aiHmOk(t.von) && aiHmOk(t.bis)) ? tag + ' ' + t.von + '–' + t.bis + u : '';
-          }).filter(Boolean) : [];
-          rows += '<div class="ai-row"><b>ED-R 132 A</b> ' + heute +
-            '. Die Schiesszeiten decken sich in der Regel mit dem AUP; Höhe und kurzfristige Änderungen nur im AUP.' +
-            (folge.length ? '<br><span class="ai-muted">Nächste Tage: ' + escHtml(folge.join(' · ')) + '</span>' : '') + '</div>';
-        } else {
-          rows += '<div class="ai-row"><b>ED-R 132 A</b> Schiesswarnung nicht auswertbar – bitte das Original öffnen.</div>';
-        }
-        if (hb.b && hb.b.ok === true) {
-          var bh = Array.isArray(hb.b.heute) ? hb.b.heute.filter(function (s) { return typeof s === 'string' && s; }) : [];
-          var stand = aiDate(hb.b.stand_utc);
-          rows += '<div class="ai-row"><b>ED-R 132 B</b> ' + (bh.length ? 'heute aktiv ' + escHtml(bh.join(', ')) : 'heute kein Fenster gemeldet') +
-            (aiStr(hb.b.naechstes) ? '; nächstes Fenster ' + escHtml(hb.b.naechstes) : '') +
-            ' <span class="ai-muted">(NOTAM laut XContest' + (stand ? ', Stand ' + aiDM(stand) + ' ' + aiHM(stand) : '') + ')</span></div>';
-        } else {
-          rows += '<div class="ai-row"><b>ED-R 132 B</b> Aktivierungsdaten nicht auswertbar – bitte die Quellen öffnen.</div>';
-        }
-        html += rows;
+        html += '<div class="ai-row"><b>ED-R 132 A</b> ' + escHtml(hb.a.txt) + '</div>' +
+          '<div class="ai-row"><b>ED-R 132 B</b> ' + escHtml(hb.b.txt) +
+          (hb.b.next ? ' <span class="ai-muted">· nächste Aktivierung ' + escHtml(hb.b.next) + '</span>' : '') + '</div>';
       }
       return html +
-        '<div class="ai-row ai-sub">Laut AIP: A Mo 06:00 bis Fr 18:00 (Lokalzeit) veröffentlicht, Nutzung täglich im AUP, GND bis 18.000 ft MSL; ' +
-        'am Wochenende und an Feiertagen nur per NOTAM. B nur per NOTAM. Durchflug: Langen Information.</div>' +
-        '<div class="brf-src">Inoffizielle Auszüge' + (hb ? ', abgerufen ' + aiDM(hb.abg) + ' ' + aiHM(hb.abg) : '') +
-        '. Massgebend sind AUP/UUP und NOTAM. Quellen: <a href="' + HB_LINKS.a + '" target="_blank" rel="noopener noreferrer">Schiesswarnungen Stetten a. k. M.</a> · ' +
+        '<div class="brf-src">Inoffiziell' + (hb ? ', Stand ' + aiHM(hb.abg) : '') +
+        ': A aus der Schiesswarnung, B aus NOTAM laut XContest. Höhen und kurzfristige Änderungen nur im AUP/UUP und NOTAM (massgebend). ' +
+        'Quellen: <a href="' + HB_LINKS.a + '" target="_blank" rel="noopener noreferrer">Schiesswarnungen Stetten a. k. M.</a> · ' +
         '<a href="' + HB_LINKS.xc + '" target="_blank" rel="noopener noreferrer">XContest Airspace</a> · ' +
         'sichtflug.app <a href="' + HB_LINKS.sa + '" target="_blank" rel="noopener noreferrer">132 A</a> / ' +
         '<a href="' + HB_LINKS.sb + '" target="_blank" rel="noopener noreferrer">132 B</a> · ' +
@@ -2035,8 +2058,9 @@
         html += '<div class="ai-st-row">' + dot(aiHas(AI_TH_STUFE, th.stufe) ? AI_TH_STUFE[th.stufe] : AI_GREY) +
           '<span>Thermik (Prognose): ' + escHtml(aiDe(th.kurz)) + '</span></div>';
       }
-      var hbs = st.kind === 'ok' ? aiHeuberg(d, now) : null;   // ED-R 132 Heuberg (Wunsch 16.11.): immer interessant
-      if (hbs) html += '<div class="ai-st-row">' + dot(hbs.color) + '<span>ED-R 132 Heuberg: ' + hbs.kurz + '</span></div>';
+      var hbs = aiHeuberg(d, now);   // ED-R 132 Heuberg (Wunsch 16.11.): auch bei älterem Briefing, solange der Auszug von heute ist
+      if (hbs) html += '<div class="ai-st-row">' + dot(hbs.color) + '<span>ED-R 132 Heuberg: ' + hbs.kurz +
+        ' <span class="ai-muted">· Stand ' + aiHM(hbs.abg) + '</span></span></div>';
       html += '</div>';
       html += '<div class="ai-text">' + escHtml(aiDe(aiStr(b.text))) + '</div>';
 
@@ -2748,8 +2772,8 @@
         von ? null : 'Modell sieht heute keine nutzbare Thermik');
       if (best) {
         var blau = best.top < best.lcl;
-        html += tstat('Max. Arbeitshöhe', '~' + fmt100(Math.min(best.top, best.lcl)) + '&nbsp;m',
-          'MSL · um ' + best.zeit);
+        html += tstat('Max. Arbeitshöhe', '~' + fmt100(Math.min(best.top, best.lcl)) + '&nbsp;m&nbsp;MSL',
+          'um ' + best.zeit);
         html += tstat('Charakter', blau ? 'Blauthermik' : 'Cumulus',
           blau ? 'Basis läge über Thermik-Top' : 'Cu-Basis ~' + fmt100(best.lcl) + '&nbsp;m MSL');
       }

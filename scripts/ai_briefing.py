@@ -175,7 +175,7 @@ Grundsätze
 - Beobachtung vor Prognose: Was Bilder und Messwerte jetzt zeigen, hat Vorrang. Die Prognose nutzt du nur für die Entwicklung der nächsten Stunden und kennzeichnest sie im Text als Prognose.
 - Messwerte vor Bild: Wind, Böen, Temperatur, Taupunkt, Druck und Niederschlag am Platz stammen aus der Wetterstation. Die Bilder nutzt du für das, was nur sie zeigen: Bewölkung, Wolkenbasis, Quellbewölkung über den Höhen, Sicht, Nebel und Hochnebel, Schneegrenze, Niederschlag in der Ferne und den Zustand der Piste.
 - Steht bei der Wetterstation «kein Messwert» für den Wind, leitest du den Wind am Platz aus dem METAR Basel-Mulhouse und, falls er im Bild ist, aus dem Windsack der Kamera «§WINDSACK§» ab und nennst ihn als Schätzung, zum Beispiel «Wind geschätzt schwach aus West». Fehlen Temperatur und Taupunkt, nimmst du die Spreizung aus dem METAR Basel-Mulhouse (Rheinebene, rund 610 m tiefer, nur grob übertragbar). Dass Messwerte der Station fehlen, erwähnst du nirgends.
-- Höhen sind immer Höhen über Meer und tragen immer den Zusatz «MSL», zum Beispiel «Basis 1.150 m MSL» oder «Höhen ca. 1.400 m MSL». Bei der Wolkenbasis über dem Platz nennst du zusätzlich die Höhe über dem Platz (EDSF liegt auf 880 m MSL), zum Beispiel «Basis 1.150 m MSL (rund 270 m über Platz)»; in himmel.wolkenbasis_m steht nur der MSL-Wert. Die Wolkenbasis leitest du aus Landmarken mit bekannter Höhe ab (siehe Kamerabeschreibungen), mit den METAR als Gegencheck: Wolkenhöhen im METAR sind Fuss über dem jeweiligen Flugplatz, also Basis = Platzhöhe + Fuss × 0,3048 (Basel-Mulhouse 270 m, Zürich-Kloten 432 m, Grenchen 430 m MSL). EDSF liegt rund 610 m über Basel: Eine Schicht 2000 ft über Basel liegt etwa auf Platzhöhe. Die Spreizung Temperatur minus Taupunkt am Platz ergibt eine grobe Kumulusbasis: 880 m MSL + 122 m pro Grad.
+- Höhen sind immer Höhen über Meer und tragen immer den Zusatz «MSL», zum Beispiel «Basis 1.150 m MSL» oder «Höhen ca. 1.400 m MSL». Das gilt für jeden Text, auch für die Regionen- und Thermiksätze; nicht so: «Basis um 850 m» oder «Höhen ab 1.300 m in Wolken». Bei der Wolkenbasis über dem Platz nennst du zusätzlich die Höhe über dem Platz (EDSF liegt auf 880 m MSL), zum Beispiel «Basis 1.150 m MSL (rund 270 m über Platz)»; in himmel.wolkenbasis_m steht nur der MSL-Wert. Die Wolkenbasis leitest du aus Landmarken mit bekannter Höhe ab (siehe Kamerabeschreibungen), mit den METAR als Gegencheck: Wolkenhöhen im METAR sind Fuss über dem jeweiligen Flugplatz, also Basis = Platzhöhe + Fuss × 0,3048 (Basel-Mulhouse 270 m, Zürich-Kloten 432 m, Grenchen 430 m MSL). EDSF liegt rund 610 m über Basel: Eine Schicht 2000 ft über Basel liegt etwa auf Platzhöhe. Die Spreizung Temperatur minus Taupunkt am Platz ergibt eine grobe Kumulusbasis: 880 m MSL + 122 m pro Grad.
 - briefing.lage bewertet das Flugwetter am Platz und in der Umgebung: Sicht, Wolkenbasis, Bewölkung, Wind und Böen, Niederschlag. Die Thermik fliesst nicht ein, sie wird separat bewertet. Bei einer Regenwahrscheinlichkeit von 50 % oder mehr in den nächsten 3 Stunden ist die Lage höchstens "maessig", auch bei guter Sicht und hoher Basis. Steht bei den Messwerten eine «Obergrenze für briefing.lage», gilt sie.
 - himmel.sicht_km ist die Distanz der fernsten Landmarke, die auf einem brauchbaren Bild vom Platz oder aus dem Schwarzwald klar und mit Konturen erkennbar ist (Distanz gemäss Kamerabeschreibung, ab Kamerastandort). Schätze nicht darüber hinaus. Die Sichtweite in briefing.text ist genau dieselbe Zahl, zum Beispiel «Sicht 40 km (Feldberg)». Ist keine Landmarke beurteilbar, setze null und nenne keine Zahl.
 - Ehrlich bei Unsicherheit: Lässt sich etwas aus den Daten nicht sicher bestimmen, setze null bzw. "unbekannt" und erfinde nichts. Gegenlicht, Dunst über der Rheinebene, Schatten und Spiegelungen sind keine Wolken.
@@ -1341,12 +1341,25 @@ def dabs_hits(parsed: dict, now: datetime, until: datetime) -> list:
 
 
 def fetch_dabs(session) -> bytes:
-    r = session.get(DABS_URL, timeout=30, headers={"User-Agent": UA})
-    if r.status_code != 200:
-        raise DabsError(f"HTTP {r.status_code}")
-    if len(r.content) > 5_000_000:
-        raise DabsError(f"PDF zu gross ({len(r.content)} Bytes)")
-    return r.content
+    """Up to three attempts: on 16.11. two slots lost the DABS to a ConnectTimeout at the runner while the
+    server answered normally elsewhere. Network errors and HTTP 5xx are retried, everything else is final."""
+    tries = 3
+    for n in range(1, tries + 1):
+        try:
+            r = session.get(DABS_URL, timeout=(10, 30), headers={"User-Agent": UA})
+            if r.status_code >= 500:
+                raise DabsError(f"HTTP {r.status_code}")
+        except Exception as e:  # noqa: BLE001
+            if n == tries:
+                raise DabsError(f"{type(e).__name__} nach {tries} Versuchen: {clip(str(e), 80)}") from e
+            print(f"DABS attempt {n} failed ({type(e).__name__}: {e}), retrying", file=sys.stderr)
+            time.sleep(5 * n)
+            continue
+        if r.status_code != 200:
+            raise DabsError(f"HTTP {r.status_code}")
+        if len(r.content) > 5_000_000:
+            raise DabsError(f"PDF zu gross ({len(r.content)} Bytes)")
+        return r.content
 
 
 def dabs_block(session, now: datetime, sset: datetime) -> dict:
@@ -1641,6 +1654,8 @@ def heuberg_b(session, now: datetime, sset: datetime, cache) -> dict:
     return {"ok": True, "quelle": HB_XC_PAGE, "stand_utc": iso(upd),
             "heute": [span(a, b) for a, b in heute],
             "naechstes": span(*later[0], with_date=True) if later else None,
+            # the page computes «aktiv bis/ab» from these with the time of display (user, 16.11.: only the current status)
+            "fenster_utc": [[iso(a), iso(b)] for a, b in windows if b > now][:12],
             "cache": {"oaid": oaid, "oalast": f.get("oalast_update"), "airid": airid}}
 
 

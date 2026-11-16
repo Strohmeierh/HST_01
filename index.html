@@ -458,6 +458,7 @@
       font-weight: 600; cursor: pointer; font-family: var(--font);
     }
     .lock-btn:hover { background: #7dd3fc; }
+    .lock-btn:disabled { opacity: 0.6; cursor: default; }
     .lock-err { font-size: 0.78rem; color: #f87171; margin-top: 8px; min-height: 1em; }
 
     /* Lade-Spinner */
@@ -1051,13 +1052,14 @@
         </div>
       </div>
 
+      <!-- Flugzeughalle: Die Bildadresse steht absichtlich nicht im Quelltext (verschlüsselt im Skript, Abschnitt «Flugzeughalle»). -->
       <div class="cam-card" id="halle-card">
         <div class="cam-header">
-          <a href="http://www.lgh-platz.de/cam/cam11.jpg" target="_blank" rel="noopener">EDSF – Flugzeughalle</a>
-          <span class="status-dot"></span>
+          <a target="_blank" rel="noopener">EDSF – Flugzeughalle</a>
+          <span class="status-dot age-unknown" title="Keine Altersprüfung (Bildadresse verschlüsselt)"></span>
         </div>
         <div class="media-container loaded">
-          <img class="live-cam" data-locksrc="https://wsrv.nl/?url=www.lgh-platz.de/cam/cam11.jpg" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="640" height="360" alt="EDSF Flugzeughalle">
+          <img class="live-cam" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="640" height="360" alt="EDSF Flugzeughalle">
           <div class="lock-overlay" id="halle-lock">
             <div class="lock-box">
               <div class="lock-title">🔒 Flugzeughalle</div>
@@ -3328,9 +3330,9 @@
       var img  = card.querySelector('img.live-cam');
       var overlay = card.querySelector('.iframe-overlay');
       if (!a) return;
-      var base = a.getAttribute('href');
 
       function openFresh(e) {
+        var base = a.getAttribute('href');   // erst beim Klick lesen: die Hallen-Karte erhält ihre Adresse erst nach dem Entsperren
         if (!base) return;
         var tsEl   = card.querySelector('.cam-timestamp');
         var ageTxt = tsEl ? tsEl.textContent : '';
@@ -3403,12 +3405,13 @@
     loadThermik();
     if (!wxLoaded) { wxLoaded = true; loadWetter(); }
 
-    /* ── Flugzeughalle: einfacher Code-Sichtschutz (pro Gerät gespeichert) ──
-       Hinweis: Nur ein Sichtschutz gegen zufälliges Mitschauen – kein echter
-       Schutz (Bild-URL & Code stehen im Seitenquelltext). */
+    /* ── Flugzeughalle: Sichtschutz mit Code (pro Gerät gemerkt) ──
+       Die Bildadresse steht nur verschlüsselt im Quelltext (AES-GCM; der Schlüssel entsteht per PBKDF2 aus dem Code).
+       Kein echter Zugriffsschutz: Ein kurzer Code lässt sich durchprobieren, und das Bild selbst liegt ohne
+       Anmeldung auf dem Kameraserver. HALLE wird lokal erzeugt (halle_encrypt.mjs, nicht im Repo). */
     (function () {
-      var CODE = '5383';
-      var KEY  = 'edsf-halle-ok';
+      var HALLE = { it: 250000, salt: '8uRcz02ZbN5nPbkqD3GFSw==', iv: 'joQbBuCShb7n9wch', ct: 'wPfgeJWO7fFOZaSvLmlGb7dh/T9HQ+h6MgTNEMsE5AVGgcRTMAeWrwj5Md/RiLmUbEtZhzkx82iSqxPbPta4TGR89kJzytawt9G/JVwVm+bTWPSz3fhMYWYyMl9U09lplLyyGdg7r3qhIsr7ydM7pozPY7lp40xi2AOtHQ==' };   // base64
+      var KEY = 'edsf-halle-key';              // gemerkt wird der abgeleitete Schlüssel, weder Code noch Adresse
       var card = document.getElementById('halle-card');
       if (!card) return;
       var img     = card.querySelector('img.live-cam');
@@ -3417,41 +3420,100 @@
       var btn     = document.getElementById('halle-btn');
       var err     = document.getElementById('halle-err');
       var link    = card.querySelector('.cam-header a');
-      if (!img || !overlay) return;
+      if (!img || !overlay || !input || !btn || !err || !link) return;
+      var box = overlay.querySelector('.lock-box');
+      var subtle = window.crypto && window.crypto.subtle;
+      var unlocked = false, busy = false, WRONG = {};
 
-      function unlocked() { try { return localStorage.getItem(KEY) === '1'; } catch (e) { return false; } }
+      storeSet('edsf-halle-ok', null);         // Merker der alten Lösung: öffnet nichts mehr
 
-      function reveal() {
+      function unb64(s) {
+        var b = atob(s), u = new Uint8Array(b.length), i;
+        for (i = 0; i < b.length; i++) u[i] = b.charCodeAt(i);
+        return u;
+      }
+      function b64(buf) {
+        var u = new Uint8Array(buf), s = '', i;
+        for (i = 0; i < u.length; i++) s += String.fromCharCode(u[i]);
+        return btoa(s);
+      }
+      function derive(code) {                  // Code → 32 Byte Schlüssel
+        return subtle.importKey('raw', new TextEncoder().encode(code), 'PBKDF2', false, ['deriveBits'])
+          .then(function (km) {
+            return subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: unb64(HALLE.salt), iterations: HALLE.it }, km, 256);
+          });
+      }
+      function decryptWith(raw) {              // Schlüssel → {src, href}; passt er nicht: Ablehnung mit WRONG
+        return subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['decrypt'])
+          .then(function (k) {
+            return subtle.decrypt({ name: 'AES-GCM', iv: unb64(HALLE.iv) }, k, unb64(HALLE.ct))
+              .then(null, function () { throw WRONG; });
+          })
+          .then(function (buf) {
+            var o = JSON.parse(new TextDecoder().decode(buf));
+            if (!o || typeof o.src !== 'string' || typeof o.href !== 'string' ||
+                o.src.indexOf('https://') !== 0 || !/^https?:[/][/]/.test(o.href)) throw new Error('Nutzlast unlesbar');
+            return o;
+          });
+      }
+      function reveal(o) {
+        unlocked = true;
         overlay.style.display = 'none';
-        var src = img.getAttribute('data-locksrc');
-        if (src && !img.getAttribute('data-src')) {
-          img.setAttribute('data-src', src);
-          img.dataset.initialized = '1';
-          loadImg(img, Date.now());
-        }
+        link.setAttribute('href', o.href);
+        img.setAttribute('data-src', o.src);
+        img.dataset.initialized = '1';
+        loadImg(img, Date.now());
+      }
+      function setBusy(on) {
+        busy = on;
+        btn.disabled = on;
+        btn.textContent = on ? 'Prüfe …' : 'Entsperren';
       }
 
-      if (unlocked()) {
-        reveal();
-      } else {
-        // Header-Link sperren, solange verriegelt (Capture-Phase blockt die Lightbox)
-        link.addEventListener('click', function (e) {
-          if (!unlocked()) { e.preventDefault(); e.stopImmediatePropagation(); if (input) input.focus(); }
-        }, true);
+      // Solange gesperrt: Der Titel-Link hat keine Adresse und öffnet nichts (auch keine Lightbox)
+      link.addEventListener('click', function (e) {
+        if (!unlocked) { e.preventDefault(); e.stopImmediatePropagation(); if (!input.disabled) input.focus(); }
+      }, true);
 
-        var pruefe = function () {
-          if (input.value.trim() === CODE) {
-            try { localStorage.setItem(KEY, '1'); } catch (e) {}
-            err.textContent = '';
-            reveal();
-          } else {
-            err.textContent = 'Falscher Code';
+      if (!subtle || typeof TextEncoder === 'undefined' || typeof TextDecoder === 'undefined') {
+        input.disabled = true;
+        btn.disabled = true;
+        err.textContent = 'Entsperren hier nicht möglich.';   // kurz, passt auch bei 320 px (fehlt nur ohne https oder bei sehr altem Browser)
+        return;
+      }
+
+      function pruefe() {
+        if (busy || unlocked) return;
+        var code = input.value.trim(), raw;
+        if (!code) { input.focus(); return; }
+        err.textContent = '';
+        setBusy(true);
+        Promise.resolve().then(function () { return derive(code); })
+          .then(function (bits) { raw = bits; return decryptWith(bits); })
+          .then(function (o) {
+            storeSet(KEY, b64(raw));
+            input.value = '';                    // der Code bleibt nicht im ausgeblendeten Feld stehen
+            setBusy(false);
+            reveal(o);
+          }, function (e) {
+            setBusy(false);
             input.value = '';
+            err.textContent = e === WRONG ? 'Falscher Code' : 'Entsperren fehlgeschlagen (Browser zu alt?).';
             input.focus();
-          }
-        };
-        btn.addEventListener('click', pruefe);
-        input.addEventListener('keydown', function (e) { if (e.key === 'Enter') pruefe(); });
+          });
+      }
+      btn.addEventListener('click', pruefe);
+      input.addEventListener('keydown', function (e) { if (e.key === 'Enter') pruefe(); });
+
+      // Gemerkter Schlüssel: still prüfen. Passt er nicht mehr (neu verschlüsselt, beschädigt), wird er gelöscht.
+      var saved = storeGet(KEY);
+      if (saved) {
+        var done = function () { busy = false; if (box) box.style.visibility = ''; };
+        busy = true;
+        if (box) box.style.visibility = 'hidden';   // kein Aufblitzen des Formulars auf entsperrten Geräten
+        Promise.resolve().then(function () { return decryptWith(unb64(saved)); })
+          .then(reveal, function () { storeSet(KEY, null); })
+          .then(done, done);
       }
     })();
 

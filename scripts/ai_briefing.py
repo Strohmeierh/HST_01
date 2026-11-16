@@ -83,7 +83,7 @@ METAR_MAX_AGE_MIN = 90
 
 # ── Webcams sent to the model ────────────────────────────────────────────────
 # "title" must match the card title in index.html exactly; the image URL is read from the card (data-src), so
-# URL changes in the HTML are picked up automatically. Cards with data-locksrc (code-locked hangar camera) and
+# URL changes in the HTML are picked up automatically. Code-locked cards (lock overlay, hangar camera) and
 # iframes are never used. "wsrv": resize/crop parameters (~600-1000 image tokens each).
 # "origin" (optional): fixed source for a card that is an iframe on the page (the page keeps the interactive video,
 # the model gets the still of the same camera); its age comes from the Last-Modified header of the origin.
@@ -480,12 +480,12 @@ def slot_start(label, now: datetime):
 # ── Inputs for the briefing ──────────────────────────────────────────────────
 def resolve_cams(page: str) -> dict:
     """title -> {"src": raw data-src (key of cam-status.json), "url": usable URL}.
-    Code-locked cards (data-locksrc, hangar camera) and iframes are skipped on purpose."""
+    Code-locked cards (lock overlay, hangar camera) and iframes are skipped on purpose."""
     found = {}
     for chunk in page.split('class="cam-card"')[1:]:
         chunk = chunk.split("</main>", 1)[0]          # the last card must not reach into the scripts
-        if re.search(r"<img[^>]*\sdata-locksrc=", chunk):
-            continue                                  # never send the code-locked hangar camera
+        if re.search(r"""class=["'][^"']*\block-overlay\b|<img[^>]*\sdata-locksrc=""", chunk, re.I):
+            continue                                  # never send a code-locked card (hangar camera), even if it had a data-src
         m_title = re.search(r'class="cam-header">\s*<a[^>]*>([^<]+)</a>', chunk)
         m_src = re.search(r'<img[^>]*\sdata-src="(https://wsrv\.nl/\?url=[^"]+)"', chunk)
         if m_title and m_src:

@@ -1698,6 +1698,11 @@
     function aiDeAlt(s) {
       return String(s == null ? '' : s).replace(/(^|[^\d.,:'’])([1-9]\d{0,2})(\d{3})(?=\s*(?:FT|M)(?![A-Za-zÄÖÜäöü\d]))/gi, '$1$2.$3');
     }
+    // DABS-Höhen in m/ft sind laut Spaltenkopf des DABS «AMSL»; Zusatz wie überall (Wunsch 16.11.: Höhen immer mit MSL)
+    function aiMslBand(s) {
+      s = aiStr(s);
+      return (s && /\d\s*(?:m|ft)\b/i.test(s) && !/AGL|MSL|GND|SFC|FL|UNL/i.test(s)) ? s + ' MSL' : s;
+    }
     function aiMeter(v) {                  // Höhe aus dem Datensatz: 1400 -> «1.400 m MSL»
       return (typeof v === 'number' && isFinite(v)) ? aiThousands(Math.round(v)) + ' m MSL' : null;
     }
@@ -1898,7 +1903,7 @@
       var hits = Array.isArray(x.treffer) ? x.treffer.filter(aiObj) : [];
       hits.forEach(function (t) {
         var kopf = [aiStr(t.gebiet), aiStr(t.notam)].filter(Boolean).join(' · ') || 'Eintrag';
-        var band = aiDeAlt((aiStr(t.unten) || '?') + ' bis ' + (aiStr(t.oben) || '?'));
+        var band = aiDeAlt((aiMslBand(t.unten) || '?') + ' bis ' + (aiMslBand(t.oben) || '?'));
         html += '<div class="ai-row"><b>' + escHtml(kopf) + '</b> ' + escHtml(aiStr(t.zeit)) + ' · ' + escHtml(band) +
           (t.unsicher === true ? ' ⚠ <span class="ai-prob">nicht eindeutig lesbar</span>' : '') +
           '<br>' + escHtml(aiStr(t.text)) +
@@ -1925,10 +1930,10 @@
     function aiHmOk(s) { return typeof s === 'string' && /^\d{2}:\d{2}$/.test(s); }
     // Nur der aktuelle Status (Wunsch 16.11. nachmittags), mit der Uhrzeit beim Anzeigen gerechnet.
     // Ausserhalb eines gemeldeten Fensters immer «… gemeldet», nie «frei» oder «inaktiv».
-    function aiHbZeit(dt, now) {           // «22:30» heute (Ende um Mitternacht «24:00»), sonst «Mi 18.11. 16:00»
+    function aiHbZeit(dt, now, ende) {     // «22:30» heute (ein Ende um Mitternacht «24:00»), sonst «Mi 18.11. 16:00»
       var hm = aiHM(dt);
       if (aiDay(dt) === aiDay(now)) return hm;
-      if (hm === '00:00' && aiDay(new Date(dt.getTime() - 60000)) === aiDay(now)) return '24:00';
+      if (ende && hm === '00:00' && aiDay(new Date(dt.getTime() - 60000)) === aiDay(now)) return '24:00';
       var noon = aiDate(aiDay(dt) + 'T12:00:00Z');
       return (noon ? HB_WT[noon.getUTCDay()] + ' ' : '') + aiDM(dt) + ' ' + hm;
     }
@@ -1964,12 +1969,12 @@
         wins = wins.filter(function (w) { return w[1] > t; });
         var fmt = function (w) {
           var s = new Date(w[0]), e = new Date(w[1]);
-          return aiHbZeit(s, now) + '–' + (aiDay(s) === aiDay(e) ? aiHM(e) : aiHbZeit(e, s));
+          return aiHbZeit(s, now) + '–' + (aiDay(s) === aiDay(e) ? aiHM(e) : aiHbZeit(e, s, true));
         };
         var w0 = wins[0];
-        if (w0 && w0[0] <= t) return { txt: 'aktiv bis ' + aiHbZeit(new Date(w0[1]), now), lvl: 2, next: wins[1] ? fmt(wins[1]) : '' };
+        if (w0 && w0[0] <= t) return { txt: 'aktiv bis ' + aiHbZeit(new Date(w0[1]), now, true), lvl: 2, next: wins[1] ? fmt(wins[1]) : '' };
         if (w0 && aiDay(new Date(w0[0])) === aiDay(now)) {
-          return { txt: 'aktiv ab ' + aiHM(new Date(w0[0])) + ' (bis ' + aiHbZeit(new Date(w0[1]), now) + ')', lvl: 1,
+          return { txt: 'aktiv ab ' + aiHM(new Date(w0[0])) + ' (bis ' + aiHbZeit(new Date(w0[1]), now, true) + ')', lvl: 1,
                    next: wins[1] ? fmt(wins[1]) : '' };
         }
         return { txt: 'nicht aktiv gemeldet', lvl: 0, next: w0 ? fmt(w0) : '' };

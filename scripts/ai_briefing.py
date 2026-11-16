@@ -1375,6 +1375,14 @@ def dabs_block(session, now: datetime, sset: datetime) -> dict:
             "treffer": dabs_hits(parsed, now, until), "fehler": None}
 
 
+def dabs_level(s):
+    """DABS heights in m/ft are AMSL by the column header «(m/ft AMSL or FL)»; the model gets them with «MSL»
+    (user, 16.11.: every height with MSL). The record keeps the values as parsed."""
+    if isinstance(s, str) and re.search(r"\d\s*(?:m|ft)\b", s, re.I) and not re.search(r"AGL|MSL|GND|SFC|FL|UNL", s, re.I):
+        return s + " MSL"
+    return s
+
+
 def dabs_text(dabs: dict) -> str:
     if not dabs.get("ok"):
         return "DABS Schweiz (Nordschweiz/Jura): nicht auswertbar."
@@ -1382,7 +1390,8 @@ def dabs_text(dabs: dict) -> str:
     if not dabs["treffer"]:
         return f"DABS Schweiz (Nordschweiz/Jura): keine Einträge im Filter ({stand})."
     rows = [f'- {h["gebiet"] or "ohne Gebietsnummer"} ({h["notam"] or "ohne NOTAM-Nr"}): {h["zeit"]}; '
-            f'{h["unten"] or "?"} bis {h["oben"] or "?"}; {clip(h["text"], 160)}' for h in dabs["treffer"][:15]]
+            f'{dabs_level(h["unten"]) or "?"} bis {dabs_level(h["oben"]) or "?"}; {clip(h["text"], 160)}'
+            for h in dabs["treffer"][:15]]
     more = len(dabs["treffer"]) - 15
     return (f'DABS Schweiz ({stand}): {len(dabs["treffer"])} vom Programm gefilterte Einträge in Nordschweiz/Jura, '
             "Zeiten in Lokalzeit:\n" + "\n".join(rows) + (f"\n- und {more} weitere" if more > 0 else ""))

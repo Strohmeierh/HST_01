@@ -959,7 +959,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M17 18a5 5 0 0 0-1.89-9.55 5 5 0 0 0-9 2.5 5 5 0 0 0 0 8.5h9z"/><line x1="8" y1="18" x2="8" y2="22"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="16" y1="18" x2="16" y2="22"/>
         </svg>
-        EDSF – Flugplatz Hütten-Hotzenwald · 880 m (2'885 ft)
+        EDSF – Flugplatz Hütten-Hotzenwald · 880 m MSL (2.885 ft)
       </div>
       <div id="wx-content">
         <div style="color:var(--text-muted);font-size:0.85rem;padding:10px 0;">Lade Wetterdaten…</div>
@@ -1166,7 +1166,7 @@
           <span class="status-dot"></span>
         </div>
         <div class="media-container">
-          <img class="live-cam" data-src="https://wsrv.nl/?url=flugplatzschupfart.roundshot.com/cams/632/medium" data-crop="cx=560&amp;cy=0&amp;cw=800&amp;ch=450&amp;precrop" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="640" height="360" alt="Flugplatz Schupfart, Blick nach Norden zum Hotzenwald">
+          <img class="live-cam" data-src="https://wsrv.nl/?url=flugplatzschupfart.roundshot.com/cams/632/medium" data-crop="cx=770&amp;cy=0&amp;cw=800&amp;ch=450&amp;precrop" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="640" height="360" alt="Flugplatz Schupfart, Blick nach Norden zum Hotzenwald">
         </div>
       </div>
 
@@ -1681,24 +1681,25 @@
       });
     }
 
-    /* ── KI-Briefing (data/ai_status.json, 3× täglich vom Job: 08:00, 11:00, 14:30) ──
+    /* ── KI-Briefing (data/ai_status.json, 3× täglich vom Job: 07:30 bzw. Sonnenaufgang + 20 min, 11:00, 14:30) ──
        Der Inhalt ist KI-Text und damit untrusted: jeder String läuft über escHtml oder eine feste Map.
        Bei einem Fehlschlag behält die Datei das letzte gute Briefing (ok=false, error, attempted_at_utc). */
     var AI_SEEN_KEY = 'edsf-ai-seen', AI_STALE_MIN = 360, AI_RUNNING_MIN = 10, AI_GREY = '#64748b',
         AI_SLOT_LATE_MIN = 30,             // Button zeigt die geplante Zeit, solange das Briefing höchstens so spät kam
-        AI_TZ = 'Europe/Berlin';
+        AI_TZ = 'Europe/Berlin', AI_ELEV_M = 880;
     // wie FIXED_SLOTS / SLOT_MIN_AFTER_SUNRISE in scripts/ai_briefing.py
-    var AI_SLOTS = ['08:00', '11:00', '14:30'], AI_SLOT_MIN_AFTER_SUNRISE = 20;
-    // Höhen im Schweizer Format «1'400 m»; wie SWISS_M_RE in ai_briefing.py, ohne Lookbehind (ältere Safari)
-    var AI_SWISS_M = /(^|[^\d.,:'’])([1-9]\d?)[.’]?(\d{3})(?=(?:\s*(?:–|-|bis|und|\/)\s*\d{1,2}['.’]?\d{3})*\s*(?:m|Metern?|ft)(?![A-Za-zÄÖÜäöü\d]))/g;
-    function aiSwiss(s) { return String(s == null ? '' : s).replace(AI_SWISS_M, "$1$2'$3"); }
-    function aiThousands(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "'"); }
+    var AI_SLOTS = ['07:30', '11:00', '14:30'], AI_SLOT_MIN_AFTER_SUNRISE = 20;
+    // Deutsche Schreibweise für EDSF (Wunsch 16.11.): Höhen «1.400 m»; wie DE_M_RE in ai_briefing.py, ohne Lookbehind (ältere Safari)
+    var AI_DE_M = /(^|[^\d.,:'’])([1-9]\d?)[.'’]?(\d{3})(?=(?:\s*(?:–|-|bis|und|\/)\s*\d{1,2}[.'’]?\d{3})*\s*(?:m|Metern?|ft)(?![A-Za-zÄÖÜäöü\d]))/g;
+    function aiDe(s) { return String(s == null ? '' : s).replace(AI_DE_M, '$1$2.$3'); }
+    // seitenweit genutzt (Titel, Wetter-Panel, Thermik-Karte, KI-Fenster): Ganzzahl mit Tausenderpunkt, 2885 -> «2.885»
+    function aiThousands(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
     // Höhenbänder aus DABS/dipul («5000FT AMSL», «2300 ft MSL»): nur Zahlen direkt vor FT/M
-    function aiSwissAlt(s) {
-      return String(s == null ? '' : s).replace(/(^|[^\d.,:'’])([1-9]\d{0,2})(\d{3})(?=\s*(?:FT|M)(?![A-Za-zÄÖÜäöü\d]))/gi, "$1$2'$3");
+    function aiDeAlt(s) {
+      return String(s == null ? '' : s).replace(/(^|[^\d.,:'’])([1-9]\d{0,2})(\d{3})(?=\s*(?:FT|M)(?![A-Za-zÄÖÜäöü\d]))/gi, '$1$2.$3');
     }
-    function aiMeter(v) {                  // Höhe aus dem Datensatz: 1400 -> «1'400 m ü. M.»
-      return (typeof v === 'number' && isFinite(v)) ? aiThousands(Math.round(v)) + ' m ü. M.' : null;
+    function aiMeter(v) {                  // Höhe aus dem Datensatz: 1400 -> «1.400 m MSL»
+      return (typeof v === 'number' && isFinite(v)) ? aiThousands(Math.round(v)) + ' m MSL' : null;
     }
     var ai = { data: undefined, loadedAt: 0 };          // undefined = lädt, null = keine Datei
     var AI_LAGE = {
@@ -1714,9 +1715,9 @@
       niederschlag: { kein: 'kein', in_der_ferne: 'in der Ferne', am_platz: 'am Platz', unbekannt: '–' },
       region:       { platz: 'Platz', hotzenwald: 'Hotzenwald', suedschwarzwald: 'Südschwarzwald', baar_alb: 'Baar und Alb', hochrhein_jura: 'Hochrhein und Jura' },
       problem:      { nacht: 'Nacht', zu_dunkel: 'zu dunkel', eingefroren: 'Bild eingefroren', linse_nass: 'Linse nass', verschmutzt: 'Linse verschmutzt', fehlbild: 'Fehlbild' },
-      thermik_gebiet: { schwarzwald: 'Schwarzwald', alb: 'Schwäbische Alb', jura: 'Jura' },
+      thermik_gebiet: { schwarzwald: 'Schwarzwald', alb: 'Schwäbische Alb und Donautal', jura: 'Jura' },
       thermik_region: { hotzenwald: 'Hotzenwald', hochschwarzwald: 'Feldberg/Hochschwarzwald', mittl_schwarzwald: 'Mittlerer Schwarzwald',
-                        nordschwarzwald: 'Nordschwarzwald', westalb: 'Westalb/Heuberg', mittlere_alb: 'Mittlere Alb',
+                        nordschwarzwald: 'Nordschwarzwald', westalb: 'Westalb/Heuberg', donautal: 'Oberes Donautal', mittlere_alb: 'Mittlere Alb',
                         jura_ost: 'Jura Ost (Passwang–Weissenstein)', jura_west: 'Jura West (Chasseral–Freiberge)' },
       risiko:       { gering: 'gering', mittel: 'mittel', hoch: 'hoch' }
     };
@@ -1751,11 +1752,11 @@
       if (aiDay(gen) === aiDay(new Date(now.getTime() - 86400000))) return 'gestern ' + hm;
       return aiDM(gen) + ' ' + hm;
     }
-    function aiNextSlot(now) {             // grob wie im Job: 08:00 (im Hochwinter frühestens 20 min nach Sonnenaufgang), 11:00, 14:30
+    function aiNextSlot(now) {             // grob wie im Job: 07:30, aber frühestens 20 min nach Sonnenaufgang; 11:00; 14:30
       var s = calcSunTimes(47.633, 7.941), m = /^(\d{2}):(\d{2})$/.exec(s.rise || ''), slots = AI_SLOTS.slice();
       if (m) {
-        var early = (+m[1]) * 60 + (+m[2]) + AI_SLOT_MIN_AFTER_SUNRISE + 1;
-        early += (5 - early % 5) % 5;
+        var early = (+m[1]) * 60 + (+m[2]) + AI_SLOT_MIN_AFTER_SUNRISE;
+        early += (5 - early % 5) % 5;      // auf volle 5 min aufgerundet
         slots = slots.map(function (hm) {
           var x = /^(\d{2}):(\d{2})$/.exec(hm);
           if ((+x[1]) * 60 + (+x[2]) >= early) return hm;
@@ -1836,11 +1837,14 @@
       if (!t) return '';
       var regs = Array.isArray(t.regionen) ? t.regionen.filter(aiObj) : [];
       var geb = Array.isArray(t.gebiete) ? t.gebiete.filter(aiObj) : [];
+      var anyOk = regs.some(function (r) { return r.nutzbar === true; });
       function hm(s) { return (typeof s === 'string' && /^\d{2}:\d{2}$/.test(s)) ? s : null; }
-      function m(v) { return (typeof v === 'number' && isFinite(v)) ? aiThousands(Math.round(v)) + ' m' : null; }
-      var windH = m(t.wind_hoehe_m) || "1'500 m";
-      var html = '<div class="ai-sec">Thermik (Prognose)</div>';
-      if (aiStr(t.zusammenfassung)) html += '<div class="ai-text ai-small" style="margin:0 0 6px;">' + escHtml(aiSwiss(t.zusammenfassung)) + '</div>';
+      function m(v) { return (typeof v === 'number' && isFinite(v)) ? aiThousands(Math.round(v)) + ' m MSL' : null; }
+      var windH = m(t.wind_hoehe_m) || '1.500 m MSL';
+      var html = '<div class="ai-sec">Thermik (Prognose)</div>', sum = aiStr(t.zusammenfassung);
+      // ohne nutzbare Thermik nur ein Satz, keine Details je Fluggebiet (Wunsch 16.11.)
+      if (!anyOk) return html + '<div class="ai-text ai-small" style="margin:0;">' + escHtml(aiDe(sum || 'Keine nutzbare Thermik.')) + '</div>';
+      if (sum) html += '<div class="ai-text ai-small" style="margin:0 0 6px;">' + escHtml(aiDe(sum)) + '</div>';
       Object.keys(AI_MAPS.thermik_gebiet).forEach(function (g) {
         var satz = '', rows = '';
         geb.forEach(function (x) { if (x.gebiet === g && !satz) satz = aiStr(x.satz); });
@@ -1864,28 +1868,25 @@
         });
         if (!satz && !rows) return;
         html += '<div class="ai-sub-head">' + AI_MAPS.thermik_gebiet[g] + '</div>' +
-          (satz ? '<div class="ai-row">' + escHtml(aiSwiss(satz)) + '</div>' : '') + rows;
+          (satz ? '<div class="ai-row">' + escHtml(aiDe(satz)) + '</div>' : '') + rows;
       });
       return html + '<div class="ai-text ai-small">Modellabschätzung (Parcel-Methode, Open-Meteo), ersetzt kein Emagramm.</div>';
     }
 
-    function aiEdrHtml(e, now) {           // temporäre ED-R aus dipul: Trefferliste vom Programm, Daten unverändert
-      var html = '<div class="ai-sub-head">Temporäre ED-R Deutschland (dipul)</div>';
+    function aiEdrHtml(e, now) {           // kurzfristige ED-R aus dipul: nur bei Treffern (Wunsch 16.11.), Daten unverändert
       var abg = aiDate(e.abgerufen_utc);
-      if (e.ok !== true || !abg) return html + '<div class="ai-row">Auszug nicht verfügbar – bitte die Originalquellen prüfen.</div>';
-      if (aiDay(abg) !== aiDay(now)) return html + '<div class="ai-row">Der Auszug ist nicht von heute und wird nicht mehr angezeigt.</div>';
+      if (e.ok !== true || !abg || aiDay(abg) !== aiDay(now)) return '';
       var hits = Array.isArray(e.treffer) ? e.treffer.filter(aiObj) : [];
+      if (!hits.length) return '';
+      var html = '<div class="ai-sub-head">Kurzfristige Flugbeschränkungsgebiete Deutschland (§ 17 LuftVO, gelten für alle Luftfahrzeuge)</div>';
       hits.forEach(function (t) {
         html += '<div class="ai-row"><b>' + escHtml(aiStr(t.name) || 'ohne Namen') + '</b> ' + escHtml(aiStr(t.zeit)) + ' · ' +
-          escHtml(aiSwissAlt((aiStr(t.unten) || '?') + ' bis ' + (aiStr(t.oben) || '?'))) +
+          escHtml(aiDeAlt((aiStr(t.unten) || '?') + ' bis ' + (aiStr(t.oben) || '?'))) +
           (t.unsicher === true ? ' ⚠ <span class="ai-prob">Angaben unvollständig</span>' : '') + '</div>';
       });
-      if (!hits.length) html += '<div class="ai-row">Keine temporären Flugbeschränkungsgebiete (§ 17 LuftVO) im Filter.</div>';
-      var tot = (typeof e.eintraege_total === 'number' && isFinite(e.eintraege_total))
-        ? ' · ' + hits.length + ' von ' + e.eintraege_total + ' Einträgen in Deutschland' : '';
-      return html + '<div class="brf-src">Abgerufen ' + aiDM(abg) + ' ' + aiHM(abg) + tot +
+      return html + '<div class="brf-src">Abgerufen ' + aiDM(abg) + ' ' + aiHM(abg) +
         (aiStr(e.filter) ? ' · ' + escHtml(e.filter) : '') +
-        ' · Quelle: <a href="https://www.dipul.de/homepage/de/informationen/geografische-gebiete/wfs-wms/" target="_blank" rel="noopener noreferrer">dipul</a>,' +
+        ' · Quelle: <a href="https://www.dipul.de/homepage/de/informationen/geografische-gebiete/wfs-wms/" target="_blank" rel="noopener noreferrer">dipul</a> (DFS),' +
         ' Lizenz <a href="https://creativecommons.org/licenses/by-nd/4.0/deed.de" target="_blank" rel="noopener noreferrer">CC BY-ND 4.0</a></div>';
     }
     function aiDabsHtml(x, now) {          // DABS-Auszug: Trefferliste vom Programm, nicht von der KI
@@ -1897,7 +1898,7 @@
       var hits = Array.isArray(x.treffer) ? x.treffer.filter(aiObj) : [];
       hits.forEach(function (t) {
         var kopf = [aiStr(t.gebiet), aiStr(t.notam)].filter(Boolean).join(' · ') || 'Eintrag';
-        var band = aiSwissAlt((aiStr(t.unten) || '?') + ' bis ' + (aiStr(t.oben) || '?'));
+        var band = aiDeAlt((aiStr(t.unten) || '?') + ' bis ' + (aiStr(t.oben) || '?'));
         html += '<div class="ai-row"><b>' + escHtml(kopf) + '</b> ' + escHtml(aiStr(t.zeit)) + ' · ' + escHtml(band) +
           (t.unsicher === true ? ' ⚠ <span class="ai-prob">nicht eindeutig lesbar</span>' : '') +
           '<br>' + escHtml(aiStr(t.text)) +
@@ -1911,15 +1912,93 @@
         (aiStr(x.filter) ? ' · ' + escHtml(x.filter) : '') + ' · neue Versionen um 09:00, 13:00 und 16:00 · ' +
         '<a href="https://www.skybriefing.com/o/dabs?today" target="_blank" rel="noopener noreferrer">Original-DABS (PDF)</a></div>';
     }
-    function aiLuftraumHtml(d, now) {      // Pflichthinweis + Links + ED-R (dipul) + DABS
-      var e = aiObj(d.edr), x = aiObj(d.dabs);
-      if (!e && !x) return '';
+    // ED-R 132 Heuberg (Wunsch 16.11.): Auszüge vom Programm – A aus der Schiesswarnung der Gemeinde Stetten a. k. M.,
+    // B aus XContest (NOTAM). Nie «frei» oder «inaktiv»; nur von heute.
+    var HB_LINKS = {
+      a: 'https://www.stetten-akm.de/gemeinde/stetten-und-bundeswehr/aktuelle-schiesswarnungen',
+      xc: 'https://airspace.xcontest.org/',
+      sa: 'https://sichtflug.app/luftraum/de/ed-r132a',
+      sb: 'https://sichtflug.app/luftraum/de/edr132b',
+      aup: 'https://ais.dfs.de/pilotservice/briefing/aup/aup_edit.jsp'
+    };
+    var HB_WT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+    function aiHmOk(s) { return typeof s === 'string' && /^\d{2}:\d{2}$/.test(s); }
+    function aiHeuberg(d, now) {
+      var h = aiObj(d.heuberg), abg = h ? aiDate(h.abgerufen_utc) : null;
+      if (!h || !abg || aiDay(abg) !== aiDay(now)) return null;
+      var a = aiObj(h.a), b = aiObj(h.b), aTxt, bTxt, aktiv = false, nowHM = aiHM(now);
+      if (a && a.ok === true) {
+        var ah = aiObj(a.heute);
+        if (ah && ah.kein_schiessen === true) aTxt = 'A kein Schiessen gemeldet';
+        else if (ah && aiHmOk(ah.von) && aiHmOk(ah.bis)) {
+          aTxt = 'A Schiesszeit ' + ah.von + '–' + ah.bis + (ah.bis <= nowHM ? ' (vorbei)' : '');
+          if (ah.bis > nowHM) aktiv = true;
+        } else aTxt = 'A heute nicht gemeldet';
+        if (ah && ah.unsicher === true) aTxt += ' (Angabe unsicher)';
+      } else aTxt = 'A nicht auswertbar';
+      if (b && b.ok === true) {
+        var bh = Array.isArray(b.heute) ? b.heute.filter(function (s) { return typeof s === 'string' && s; }) : [];
+        if (bh.length) { bTxt = 'B heute ' + bh.join(', '); aktiv = true; }
+        else bTxt = 'B heute kein Fenster gemeldet';
+      } else bTxt = 'B nicht auswertbar';
+      return { kurz: escHtml(aTxt) + ' · ' + escHtml(bTxt), color: aktiv ? AI_LAGE.schlecht.color : AI_GREY, h: h, a: a, b: b, abg: abg };
+    }
+    function aiHeubergHtml(d, now) {
+      var hb = aiHeuberg(d, now), html = '<div class="ai-sub-head">ED-R 132 Heuberg (A und B)</div>';
+      if (!hb) {
+        html += '<div class="ai-row">Kein Auszug von heute – bitte die Quellen unten öffnen.</div>';
+      } else {
+        var rows = '';
+        if (hb.a && hb.a.ok === true) {
+          var ah = aiObj(hb.a.heute), heute;
+          if (ah && ah.kein_schiessen === true) heute = 'heute laut Schiesswarnung kein Schiessen gemeldet';
+          else if (ah && aiHmOk(ah.von) && aiHmOk(ah.bis)) heute = 'heute Schiesszeit ' + ah.von + '–' + ah.bis;
+          else heute = 'für heute keine lesbare Schiesswarnung';
+          if (ah && ah.unsicher === true) heute += ' <span class="ai-prob">(Datum in der Quelle fehlerhaft, Angabe unsicher)</span>';
+          var folge = Array.isArray(hb.a.folgetage) ? hb.a.folgetage.filter(aiObj).map(function (t) {
+            var dt = /^\d{4}-\d{2}-\d{2}$/.test(aiStr(t.datum)) ? aiDate(t.datum + 'T12:00:00Z') : null;
+            if (!dt) return '';
+            var tag = HB_WT[dt.getUTCDay()] + ' ' + aiDM(dt), u = t.unsicher === true ? ' (unsicher)' : '';
+            if (t.kein_schiessen === true) return tag + ' kein Schiessen' + u;
+            return (aiHmOk(t.von) && aiHmOk(t.bis)) ? tag + ' ' + t.von + '–' + t.bis + u : '';
+          }).filter(Boolean) : [];
+          rows += '<div class="ai-row"><b>ED-R 132 A</b> ' + heute +
+            '. Die Schiesszeiten decken sich in der Regel mit dem AUP; Höhe und kurzfristige Änderungen nur im AUP.' +
+            (folge.length ? '<br><span class="ai-muted">Nächste Tage: ' + escHtml(folge.join(' · ')) + '</span>' : '') + '</div>';
+        } else {
+          rows += '<div class="ai-row"><b>ED-R 132 A</b> Schiesswarnung nicht auswertbar – bitte das Original öffnen.</div>';
+        }
+        if (hb.b && hb.b.ok === true) {
+          var bh = Array.isArray(hb.b.heute) ? hb.b.heute.filter(function (s) { return typeof s === 'string' && s; }) : [];
+          var stand = aiDate(hb.b.stand_utc);
+          rows += '<div class="ai-row"><b>ED-R 132 B</b> ' + (bh.length ? 'heute aktiv ' + escHtml(bh.join(', ')) : 'heute kein Fenster gemeldet') +
+            (aiStr(hb.b.naechstes) ? '; nächstes Fenster ' + escHtml(hb.b.naechstes) : '') +
+            ' <span class="ai-muted">(NOTAM laut XContest' + (stand ? ', Stand ' + aiDM(stand) + ' ' + aiHM(stand) : '') + ')</span></div>';
+        } else {
+          rows += '<div class="ai-row"><b>ED-R 132 B</b> Aktivierungsdaten nicht auswertbar – bitte die Quellen öffnen.</div>';
+        }
+        html += rows;
+      }
+      return html +
+        '<div class="ai-row ai-sub">Laut AIP: A Mo 06:00 bis Fr 18:00 (Lokalzeit) veröffentlicht, Nutzung täglich im AUP, GND bis 18.000 ft MSL; ' +
+        'am Wochenende und an Feiertagen nur per NOTAM. B nur per NOTAM. Durchflug: Langen Information.</div>' +
+        '<div class="brf-src">Inoffizielle Auszüge' + (hb ? ', abgerufen ' + aiDM(hb.abg) + ' ' + aiHM(hb.abg) : '') +
+        '. Massgebend sind AUP/UUP und NOTAM. Quellen: <a href="' + HB_LINKS.a + '" target="_blank" rel="noopener noreferrer">Schiesswarnungen Stetten a. k. M.</a> · ' +
+        '<a href="' + HB_LINKS.xc + '" target="_blank" rel="noopener noreferrer">XContest Airspace</a> · ' +
+        'sichtflug.app <a href="' + HB_LINKS.sa + '" target="_blank" rel="noopener noreferrer">132 A</a> / ' +
+        '<a href="' + HB_LINKS.sb + '" target="_blank" rel="noopener noreferrer">132 B</a> · ' +
+        '<a href="' + HB_LINKS.aup + '" target="_blank" rel="noopener noreferrer">DFS WebAUP</a></div>';
+    }
+    function aiLuftraumHtml(d, now) {      // Pflichthinweis + Links + Heuberg + ED-R (dipul, nur Treffer) + DABS
+      var e = aiObj(d.edr), x = aiObj(d.dabs), h = aiObj(d.heuberg);
+      if (!e && !x && !h) return '';
       var html = '<div class="ai-sec">Luftraum – erste Richtung</div>' +
         '<div class="ai-banner warn"><b>Nur eine erste Richtung, ersetzt kein NOTAM- und DABS-Briefing.</b> ' +
-        'Automatische Auszüge, unvollständig und ohne NOTAM; Aktivierungen fester Gebiete (z. B. ED-R Heuberg, TRA) fehlen. Vor dem Flug prüfen: ' +
+        'Automatische Auszüge, unvollständig und ohne NOTAM-Liste. Vor dem Flug prüfen: ' +
         '<a href="https://ais.dfs.de/pilotservice/" target="_blank" rel="noopener noreferrer">DFS AIS-Portal (NOTAM, VFReBulletin)</a> · ' +
         '<a href="https://ais.dfs.de/pilotservice/briefing/aup/aup_edit.jsp" target="_blank" rel="noopener noreferrer">DFS WebAUP (ED-R/TRA)</a> · ' +
         '<a href="https://www.skybriefing.com/o/dabs?today" target="_blank" rel="noopener noreferrer">DABS (PDF)</a></div>';
+      html += aiHeubergHtml(d, now);
       if (e) html += aiEdrHtml(e, now);
       if (x) html += aiDabsHtml(x, now);
       return html;
@@ -1927,7 +2006,7 @@
 
     function aiModalHtml() {
       var st = aiState(), now = new Date(), html = '';
-      var sched = 'Erstellt wird es dreimal täglich (08:00, 11:00 und 14:30; im Hochwinter das erste kurz nach Sonnenaufgang).';
+      var sched = 'Erstellt wird es dreimal täglich (07:30, aber frühestens 20 Minuten nach Sonnenaufgang, sowie 11:00 und 14:30).';
       if (st.kind === 'loading') return '<div class="ai-text">Wird geladen…</div>';
       if (st.running) html += '<div class="ai-banner warn">Wird gerade aktualisiert…</div>';
       if (st.kind === 'none') {
@@ -1946,7 +2025,7 @@
       }
       var lg = st.lage ? AI_LAGE[st.lage] : null;
       var dot = function (c) { return '<span class="brf-dot" style="background:' + c + '"></span>'; };
-      html += '<div class="ai-headline">' + dot(lg ? lg.color : AI_GREY) + '<span>' + escHtml(aiSwiss(b.headline || '')) + '</span></div>';
+      html += '<div class="ai-headline">' + dot(lg ? lg.color : AI_GREY) + '<span>' + escHtml(aiDe(b.headline || '')) + '</span></div>';
 
       // Flugwetter und Thermik hervorgehoben; Farben nur aus festen Maps, nie aus dem Datensatz
       var th = aiThermikToday(d, st, now);
@@ -1954,18 +2033,23 @@
         '<div class="ai-st-row">' + dot(lg ? lg.color : AI_GREY) + '<span>Flugwetter: ' + (lg ? lg.label : '–') + '</span></div>';
       if (th && aiStr(th.kurz)) {
         html += '<div class="ai-st-row">' + dot(aiHas(AI_TH_STUFE, th.stufe) ? AI_TH_STUFE[th.stufe] : AI_GREY) +
-          '<span>Thermik (Prognose): ' + escHtml(aiSwiss(th.kurz)) + '</span></div>';
+          '<span>Thermik (Prognose): ' + escHtml(aiDe(th.kurz)) + '</span></div>';
       }
+      var hbs = st.kind === 'ok' ? aiHeuberg(d, now) : null;   // ED-R 132 Heuberg (Wunsch 16.11.): immer interessant
+      if (hbs) html += '<div class="ai-st-row">' + dot(hbs.color) + '<span>ED-R 132 Heuberg: ' + hbs.kurz + '</span></div>';
       html += '</div>';
-      html += '<div class="ai-text">' + escHtml(aiSwiss(aiStr(b.text))) + '</div>';
+      html += '<div class="ai-text">' + escHtml(aiDe(aiStr(b.text))) + '</div>';
 
       var basis = aiMeter(sky.wolkenbasis_m), bq = aiMap(AI_MAPS.basis_quelle, sky.basis_quelle);
+      if (basis && sky.wolkenbasis_m - AI_ELEV_M >= 10) {   // MSL-Wert vom Modell, Höhe über Platz gerechnet (Wunsch 16.11.)
+        basis += ' (≈ ' + aiThousands(Math.round((sky.wolkenbasis_m - AI_ELEV_M) / 10) * 10) + ' m über Platz)';
+      }
       var sichtTxt = aiMap(AI_MAPS.sicht, sky.sicht), sk = aiNum(sky.sicht_km, ' km');
       var nebelTxt = aiMap(AI_MAPS.nebel, sky.nebel), nog = aiMeter(sky.nebel_obergrenze_m);
       var schnee = aiMeter(sky.schneegrenze_m);
       var rows = [
         ['Bedeckung',    aiNum(sky.bedeckung_achtel, '/8') || '–'],
-        ['Wolkenbasis',  basis ? basis + (bq !== '–' ? ' <span class="ai-muted">(' + bq + ')</span>' : '') : '–'],
+        ['Wolkenbasis',  basis ? basis + (bq !== '–' ? ' <span class="ai-muted">· ' + bq + '</span>' : '') : '–'],
         ['Sicht',        sk ? (sichtTxt !== '–' ? sichtTxt + ' (≈ ' + sk + ')' : '≈ ' + sk) : sichtTxt],
         ['Nebel',        nog ? nebelTxt + ' bis ' + nog : nebelTxt],
         ['Schneegrenze', schnee ? '≈ ' + schnee : '–'],
@@ -1978,7 +2062,7 @@
       var regs = Array.isArray(sky.regionen) ? sky.regionen : [], regHtml = '';
       Object.keys(AI_MAPS.region).forEach(function (k) {
         regs.forEach(function (r) {
-          if (r && r.region === k && aiStr(r.zustand)) regHtml += '<div class="ai-row"><b>' + AI_MAPS.region[k] + '</b> ' + escHtml(aiSwiss(r.zustand)) + '</div>';
+          if (r && r.region === k && aiStr(r.zustand)) regHtml += '<div class="ai-row"><b>' + AI_MAPS.region[k] + '</b> ' + escHtml(aiDe(r.zustand)) + '</div>';
         });
       });
       if (regHtml) html += '<div class="ai-sec">Regionen</div>' + regHtml;
@@ -1995,7 +2079,7 @@
           var tags = Array.isArray(k.tags) ? k.tags.filter(function (t) { return typeof t === 'string'; })
             .map(function (t) { return escHtml(t.replace(/_/g, ' ')); }).join(', ') : '';
           camHtml += '<div class="ai-row"><b>' + escHtml(aiStr(k.titel)) + '</b>' + age +
-            (p ? ' ⚠ <span class="ai-prob">' + p + '</span>' : '') + '<br>' + escHtml(aiSwiss(aiStr(k.satz))) +
+            (p ? ' ⚠ <span class="ai-prob">' + p + '</span>' : '') + '<br>' + escHtml(aiDe(aiStr(k.satz))) +
             (tags ? ' <span class="ai-muted">· ' + tags + '</span>' : '') + '</div>';
         });
         html += '<details class="ai-cams"><summary class="ai-sec">Kameras (' + cams.length + ')</summary>' + camHtml + '</details>';
@@ -2140,8 +2224,8 @@
       if (cbFt) {
          var cbM = Math.round(cbFt / 3.28084);
          cbHtml = '<div class="wx-stat"><div class="wx-stat-label">Wolkenbasis (Schätzung)</div>' +
-                  '<div class="wx-stat-value" style="white-space: nowrap;">' + cbFt + '&nbsp;ft (MSL)</div>' +
-                  '<div class="wx-stat-sub" style="white-space: nowrap;">' + cbM  + '&nbsp;m<br>≈&nbsp;' + Math.max(0, cbM - 880) + '&nbsp;m über Platz</div></div>';
+                  '<div class="wx-stat-value" style="white-space: nowrap;">' + aiThousands(cbFt) + '&nbsp;ft MSL</div>' +
+                  '<div class="wx-stat-sub" style="white-space: nowrap;">' + aiThousands(cbM) + '&nbsp;m MSL<br>≈&nbsp;' + aiThousands(Math.max(0, cbM - 880)) + '&nbsp;m über Platz</div></div>';
       }
 
       var sunTimes = calcSunTimes(47.633, 7.941);
@@ -2180,8 +2264,8 @@
         var daColor  = densAlt > 5000 ? '#ef4444' : densAlt > 3500 ? '#f59e0b' : '#10b981';
         
         daHtml = '<div class="wx-stat"><div class="wx-stat-label">Dichtehöhe</div>' +
-          '<div class="wx-stat-value" style="color:' + daColor + '; white-space: nowrap;">' + densAlt + '&nbsp;ft</div>' +
-          '<div class="wx-stat-sub" style="white-space: nowrap;">' + Math.round(densAlt / 3.28084) + '&nbsp;m</div></div>';
+          '<div class="wx-stat-value" style="color:' + daColor + '; white-space: nowrap;">' + aiThousands(densAlt) + '&nbsp;ft</div>' +
+          '<div class="wx-stat-sub" style="white-space: nowrap;">' + aiThousands(Math.round(densAlt / 3.28084)) + '&nbsp;m</div></div>';
       }
 
       function stat(label, val, sub) {
@@ -2643,14 +2727,16 @@
         });
       }
 
-      // Erste Stunde, in der die Auslösetemperatur erreicht wird (= Thermikbeginn)
+      // Erste Stunde im Tagesfenster, in der die Auslösetemperatur erreicht wird (= Thermikbeginn);
+      // eine warme Nacht darf nicht «erreicht ab ca. 01:00» ergeben
       if (trigger !== null) {
         for (var q = 0; q < hours.length; q++) {
+          if (hours[q].hh < 8 || hours[q].hh > endCap) continue;
           if (hours[q].T0 >= trigger) { triggerAb = hours[q].zeit; break; }
         }
       }
 
-      function fmt100(m2) { return Math.round(m2 / 100) * 100; }
+      function fmt100(m2) { return aiThousands(Math.round(m2 / 100) * 100); }   // nur Anzeige: «2.700»
       function tstat(label, val, sub) {
         return '<div class="wx-stat"><div class="wx-stat-label">' + label + '</div>' +
           '<div class="wx-stat-value" style="white-space:nowrap;">' + val + '</div>' +
@@ -2668,7 +2754,7 @@
           blau ? 'Basis läge über Thermik-Top' : 'Cu-Basis ~' + fmt100(best.lcl) + '&nbsp;m MSL');
       }
       if (trigger !== null) {
-        html += tstat('Auslösetemp. (2000&nbsp;m)', trigger.toFixed(1).replace('.', ',') + '&nbsp;°C',
+        html += tstat('Auslösetemp. (2.000&nbsp;m MSL)', trigger.toFixed(1).replace('.', ',') + '&nbsp;°C',
           triggerAb ? 'erreicht ab ca. ' + triggerAb : 'heute voraussichtlich nicht erreicht');
       }
       html += '</div>' +

@@ -1939,15 +1939,15 @@
       var noon = aiDate(aiDay(dt) + 'T12:00:00Z');
       return (noon ? HB_WT[noon.getUTCDay()] + ' ' : '') + aiDM(dt) + ' ' + hm;
     }
-    function aiHbA(a, now) {               // lvl 2 = jetzt aktiv, 1 = heute noch aktiv, 0 = sonst
+    function aiHbA(a, now) {               // lvl 2 = jetzt aktiv, 1 = heute noch aktiv, 0 = sonst; nichtAktiv = klare Meldung «nicht aktiv»
       if (!a || a.ok !== true) return { txt: 'nicht auswertbar', lvl: 0 };
       var ah = aiObj(a.heute), nowHM = aiHM(now), r;
       if (!ah || ah.datum !== aiDay(now)) return { txt: 'für heute keine Meldung', lvl: 0 };
-      if (ah.kein_schiessen === true) r = { txt: 'nicht aktiv gemeldet (kein Schiessen)', lvl: 0 };
+      if (ah.kein_schiessen === true) r = { txt: 'nicht aktiv gemeldet (kein Schiessen)', lvl: 0, nichtAktiv: ah.unsicher === false };
       else if (aiHmOk(ah.von) && aiHmOk(ah.bis) && ah.von < ah.bis) {
         if (nowHM < ah.von) r = { txt: 'aktiv ab ' + ah.von + ' (bis ' + ah.bis + ')', lvl: 1 };
         else if (nowHM < ah.bis) r = { txt: 'aktiv bis ' + ah.bis, lvl: 2 };
-        else r = { txt: 'seit ' + ah.bis + ' nicht mehr aktiv gemeldet', lvl: 0 };
+        else r = { txt: 'seit ' + ah.bis + ' nicht mehr aktiv gemeldet', lvl: 0, nichtAktiv: ah.unsicher === false };
       } else return { txt: 'nicht auswertbar', lvl: 0 };
       if (ah.unsicher === true) r.txt += ' (Angabe unsicher)';
       return r;
@@ -1979,7 +1979,7 @@
           return { txt: 'aktiv ab ' + aiHM(new Date(w0[0])) + ' (bis ' + aiHbZeit(new Date(w0[1]), now, true) + ')', lvl: 1,
                    next: wins[1] ? fmt(wins[1]) : '' };
         }
-        return { txt: 'nicht aktiv gemeldet', lvl: 0, next: w0 ? fmt(w0) : '' };
+        return { txt: 'nicht aktiv gemeldet', lvl: 0, nichtAktiv: true, next: w0 ? fmt(w0) : '' };
       }
       // Records ohne fenster_utc (14:30-Record vom 16.11.): Texte «17:00–22:30» oder mehrtägig
       var bh = Array.isArray(b.heute) ? b.heute.filter(function (x) { return typeof x === 'string' && x; }) : [];
@@ -1992,14 +1992,19 @@
                                : { txt: 'aktiv ab ' + m[1] + ' (bis ' + m[2] + ')', lvl: 1, next: nx };
         }
       }
-      return { txt: 'nicht aktiv gemeldet', lvl: 0, next: nx };
+      return { txt: 'nicht aktiv gemeldet', lvl: 0, next: nx };   // Altformat: bewusst ohne nichtAktiv, die Ampel bleibt grau
+    }
+    // Ampel je Teil (Wunsch 17.11.): rot = jetzt aktiv, gelb = heute noch aktiv, grün nur bei klarer Meldung «nicht aktiv»
+    // (lvl 0 und nichtAktiv === true), alles andere grau. Die Farbe kommt aus dem Zustand und festen Maps, nie aus Text oder Datensatz.
+    function aiHbColor(x) {
+      if (x.lvl === 2) return AI_LAGE.schlecht.color;
+      if (x.lvl === 1) return AI_LAGE.maessig.color;
+      return (x.lvl === 0 && x.nichtAktiv === true) ? AI_LAGE.gut.color : AI_GREY;
     }
     function aiHeuberg(d, now) {
       var h = aiObj(d.heuberg), abg = h ? aiDate(h.abgerufen_utc) : null;
       if (!h || !abg || aiDay(abg) !== aiDay(now)) return null;
-      var a = aiHbA(aiObj(h.a), now), b = aiHbB(aiObj(h.b), now), lvl = Math.max(a.lvl, b.lvl);
-      return { a: a, b: b, abg: abg, kurz: escHtml('A ' + a.txt) + ' · ' + escHtml('B ' + b.txt),
-               color: lvl === 2 ? AI_LAGE.schlecht.color : (lvl === 1 ? AI_LAGE.maessig.color : AI_GREY) };
+      return { a: aiHbA(aiObj(h.a), now), b: aiHbB(aiObj(h.b), now), abg: abg };
     }
     function aiHeubergHtml(d, now) {
       var hb = aiHeuberg(d, now), html = '<div class="ai-sub-head">ED-R 132 Heuberg (A und B) – aktueller Status</div>';
@@ -2066,8 +2071,11 @@
           '<span>Thermik (Prognose): ' + escHtml(aiDe(th.kurz)) + '</span></div>';
       }
       var hbs = aiHeuberg(d, now);   // ED-R 132 Heuberg (Wunsch 16.11.): auch bei älterem Briefing, solange der Auszug von heute ist
-      if (hbs) html += '<div class="ai-st-row">' + dot(hbs.color) + '<span>ED-R 132 Heuberg: ' + hbs.kurz +
-        ' <span class="ai-muted">· Stand ' + aiHM(hbs.abg) + '</span></span></div>';
+      if (hbs) {                     // A und B je mit eigener Ampel (Wunsch 17.11.); «Stand» gilt für beide
+        html += '<div class="ai-st-row">' + dot(aiHbColor(hbs.a)) + '<span>ED-R 132 A: ' + escHtml(hbs.a.txt) + '</span></div>' +
+          '<div class="ai-st-row">' + dot(aiHbColor(hbs.b)) + '<span>ED-R 132 B: ' + escHtml(hbs.b.txt) +
+          ' <span class="ai-muted">·&nbsp;Stand&nbsp;' + aiHM(hbs.abg) + '</span></span></div>';
+      }
       html += '</div>';
       html += '<div class="ai-text">' + escHtml(aiDe(aiStr(b.text))) + '</div>';
 

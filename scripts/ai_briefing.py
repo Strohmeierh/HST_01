@@ -9,6 +9,9 @@ cam-status workflow (every 5 min via the external pinger):
     python scripts/ai_briefing.py            -> runs the briefing and writes data/ai_status.json
     python scripts/ai_briefing.py --dabs     -> fetches the DABS if a fetch is due and stores the parsed list in
                                                data/dabs.json (own step in every run; the briefing reads that file)
+    python scripts/ai_briefing.py --forecast -> fetches the Open-Meteo forecast and the thermal forecast shortly
+                                               before a briefing slot and stores them in data/open_meteo.json (own
+                                               step in every run; the briefing reads that file)
 
 The briefing runs at three slots per day (Europe/Berlin, see SUNRISE_OFFSET_MIN and FIXED_SLOTS). Each slot is
 attempted at most once; a failed attempt is not repeated.
@@ -174,7 +177,7 @@ SYSTEM_BRIEFING = """Du bist der Flugwetter-Assistent des Webcam-Dashboards für
 Du erhältst dreimal täglich (§SLOTS§) aktuelle Bilder ausgewählter Webcams vom Platz, aus dem Schwarzwald und aus den Fluggebieten, je mit einer Beschreibung der Kamera (Standort, Blickrichtung, sichtbare Landmarken mit Höhen; alle Höhen in den Beschreibungen sind m MSL). Dazu kommen Messwerte (Wetterstation am Platz, METAR Basel-Mulhouse, Zürich-Kloten und Grenchen), vom Programm gefilterte Auszüge aus dipul (temporäre Flugbeschränkungsgebiete in Deutschland) und aus dem Schweizer DABS für Nordschweiz und Jura, eine Modellprognose (Open-Meteo) für den Platz für die nächsten 12 Stunden, daraus die Regenwahrscheinlichkeit der nächsten 3 Stunden, und eine vom Programm vorgerechnete Thermikprognose für die Fluggebiete. Daraus erstellst du eine Auswertung im vorgegebenen JSON-Schema.
 
 Grundsätze
-- Beobachtung vor Prognose: Was Bilder und Messwerte jetzt zeigen, hat Vorrang. Die Prognose nutzt du nur für die Entwicklung der nächsten Stunden und kennzeichnest sie im Text als Prognose.
+- Beobachtung vor Prognose: Was Bilder und Messwerte jetzt zeigen, hat Vorrang. Die Prognose nutzt du nur für die Entwicklung der nächsten Stunden und kennzeichnest sie im Text als Prognose. Bei der Prognose und bei der Thermikprognose steht, wann sie bei Open-Meteo abgerufen wurden. Die Modelle rechnen nur alle drei Stunden neu: Die Abrufzeit erwähnst du nicht. Nur wenn dort «älterer Abruf» steht, nennst du die Abrufzeit bei der Prognose im Text, zum Beispiel «Prognose (Abruf 08:15): Regen wahrscheinlich».
 - Messwerte vor Bild: Wind, Böen, Temperatur, Taupunkt, Druck und Niederschlag am Platz stammen aus der Wetterstation. Die Bilder nutzt du für das, was nur sie zeigen: Bewölkung, Wolkenbasis, Quellbewölkung über den Höhen, Sicht, Nebel und Hochnebel, Schneegrenze, Niederschlag in der Ferne und den Zustand der Piste.
 - Steht bei der Wetterstation «kein Messwert» für den Wind, leitest du den Wind am Platz aus dem METAR Basel-Mulhouse und, falls er im Bild ist, aus dem Windsack der Kamera «§WINDSACK§» ab und nennst ihn als Schätzung, zum Beispiel «Wind geschätzt schwach aus West». Fehlen Temperatur und Taupunkt, nimmst du die Spreizung aus dem METAR Basel-Mulhouse (Rheinebene, rund 610 m tiefer, nur grob übertragbar). Dass Messwerte der Station fehlen, erwähnst du nirgends.
 - Höhen sind immer Höhen über Meer und tragen immer den Zusatz «MSL», zum Beispiel «Basis 1.150 m MSL» oder «Höhen ca. 1.400 m MSL». Das gilt für jeden Text, auch für die Regionen- und Thermiksätze; nicht so: «Basis um 850 m» oder «Höhen ab 1.300 m in Wolken». Bei der Wolkenbasis über dem Platz nennst du zusätzlich die Höhe über dem Platz (EDSF liegt auf 880 m MSL), zum Beispiel «Basis 1.150 m MSL (rund 270 m über Platz)»; in himmel.wolkenbasis_m steht nur der MSL-Wert. Die Wolkenbasis leitest du aus Landmarken mit bekannter Höhe ab (siehe Kamerabeschreibungen), mit den METAR als Gegencheck: Wolkenhöhen im METAR sind Fuss über dem jeweiligen Flugplatz, also Basis = Platzhöhe + Fuss × 0,3048 (Basel-Mulhouse 270 m, Zürich-Kloten 432 m, Grenchen 430 m MSL). EDSF liegt rund 610 m über Basel: Eine Schicht 2000 ft über Basel liegt etwa auf Platzhöhe. Die Spreizung Temperatur minus Taupunkt am Platz ergibt eine grobe Kumulusbasis: 880 m MSL + 122 m pro Grad.
@@ -688,22 +691,21 @@ OM_URL = (f"https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON
           "visibility,precipitation_probability,precipitation,wind_speed_10m,wind_direction_10m,wind_gusts_10m,"
           "cape,freezing_level_height,wind_speed_850hPa,wind_direction_850hPa,wind_speed_700hPa,"
           "wind_direction_700hPa,temperature_850hPa,temperature_700hPa"
-          "&forecast_hours=12&wind_speed_unit=kn&timezone=Europe%2FBerlin")
+          "&forecast_hours=24&wind_speed_unit=kn&timezone=Europe%2FBerlin")   # om_hours() cuts it to the next 12 hours
 
 
-def fetch_forecast(session) -> dict:
-    """Open-Meteo hourly block; one retry, because a transient error would cost the forecast
-    for the whole slot."""
+def fetch_forecast(session, retry: bool = True) -> dict:
+    """Open-Meteo hourly block, 24 hours from the current one (om_hours() cuts it to the next 12 at briefing
+    time); one retry in the briefing run, because a transient error would cost the forecast for the whole slot."""
     for attempt_no in (1, 2):
         try:
-            r = session.get(OM_URL, timeout=20, headers={"User-Agent": UA})
-            r.raise_for_status()
-            h = r.json().get("hourly")
+            data = om_get(session, OM_URL)
+            h = data.get("hourly") if isinstance(data, dict) else None
             if not isinstance(h, dict):
                 raise ValueError("hourly fehlt in der Antwort")
             return h
         except Exception as e:  # noqa: BLE001
-            if attempt_no == 2:
+            if attempt_no == 2 or not retry:
                 raise
             print(f"Open-Meteo attempt 1 failed ({type(e).__name__}: {e}), retrying", file=sys.stderr)
             time.sleep(3)
@@ -729,7 +731,7 @@ def rain_next_3h(h, now: datetime):
     return None if best is None else int(round(best))
 
 
-def forecast_text(h) -> str:
+def forecast_text(h, stand: str = "") -> str:
     if not isinstance(h, dict):
         return "Prognose Open-Meteo: nicht verfügbar."
 
@@ -762,7 +764,8 @@ def forecast_text(h) -> str:
             g("freezing_level_height", i),
             g("cape", i),
         ]))
-    return f"Prognose Open-Meteo für EDSF ({ELEV_M} m MSL), nächste 12 Stunden (Lokalzeit):\n" + "\n".join(rows)
+    return (f"Prognose Open-Meteo für EDSF ({ELEV_M} m MSL){stand}, nächste {len(rows) - 1} Stunden (Lokalzeit):\n"
+            + "\n".join(rows))
 
 
 # ── Thermikprognose Fluggebiete (Open-Meteo, Parcel-Methode wie renderThermik() in index.html) ──
@@ -816,9 +819,7 @@ def fetch_thermik(session, retry: bool = True) -> list:
     """One multi-point request; the answer is a list in the order of THERMIK_POINTS."""
     for attempt_no in (1, 2):
         try:
-            r = session.get(THERMIK_URL, timeout=20, headers={"User-Agent": UA})
-            r.raise_for_status()
-            data = r.json()
+            data = om_get(session, THERMIK_URL)
             if not isinstance(data, list) or len(data) != len(THERMIK_POINTS):
                 raise ValueError("unerwartete Antwort (Anzahl Punkte)")
             return data
@@ -955,9 +956,9 @@ def thermik_forecast(session, now: datetime, sset: datetime, retry: bool = True)
     return out
 
 
-def thermik_text(regs: list) -> str:
+def thermik_text(regs: list, stand: str = "") -> str:
     any_ok = any(r["nutzbar"] for r in regs)
-    rows = ["Thermikprognose Fluggebiete für heute (vorgerechnet aus dem Open-Meteo-Höhenprofil, Parcel-Methode, "
+    rows = [f"Thermikprognose Fluggebiete für heute{stand} (vorgerechnet aus dem Open-Meteo-Höhenprofil, Parcel-Methode, "
             "Höhen in m MSL, Zeiten Lokalzeit; Modellabschätzung, keine Beobachtung):",
             ("In mindestens einem Gebiet ist Thermik nutzbar: je Gebiet einen Satz schreiben." if any_ok else
              "In keinem Gebiet ist Thermik nutzbar: briefing.thermik_gebiete leer lassen.")]
@@ -1030,6 +1031,196 @@ def thermik_fallback(regs: list) -> str:
     if any(r["risiko"] == "hoch" for r in regs):
         txt += " Gewitterrisiko hoch."
     return txt
+
+
+# ── Open-Meteo store (data/open_meteo.json) ── this block is identical in the EDSF and the LSZK repository ───────
+# Open-Meteo limits its free API per IP address, and the GitHub runners share their addresses with many other
+# projects: on 16.-18.11. more than half of the briefings got no forecast (read timeout or HTTP 429), and a retry
+# in the same run comes from the same address. So the cam-status job (every 5 min, a new runner each time) fetches
+# the forecast and the thermal forecast during the OM_LEAD_MIN minutes before each briefing slot (`--forecast`)
+# and stores them; the briefing reads that file and asks Open-Meteo itself only if nothing recent is stored. The
+# weather models are updated every 3 hours, so data fetched shortly before a slot is as good as a request at
+# briefing time.
+OM_FILE = ROOT / "data" / "open_meteo.json"
+OM_QUELLE = "Open-Meteo (https://open-meteo.com/), CC BY 4.0"
+OM_LEAD_MIN = 45             # the job fetches from this long before a briefing slot until the slot starts ...
+OM_REFRESH_MIN = 20          # ... and again as soon as the stored data is this old
+OM_FRESH_MIN = 90            # the briefing uses stored data up to this age without a request of its own
+OM_MAX_AGE_MIN = 360         # after a failed request it still uses stored data up to this age (the model is told)
+OM_TIMEOUT = (5, 20)         # connect, read (s)
+OM_ROWS = 12                 # hours of the forecast table for the model
+OM_PARTS = (("prognose", "Prognose Open-Meteo"), ("thermik", "Thermikprognose"))   # key, label in inputs.fehler
+
+
+class OpenMeteoError(RuntimeError):
+    """HTTP error of the Open-Meteo API, with the reason given in the answer."""
+
+
+def om_get(session, url: str):
+    """One request -> the parsed JSON. An HTTP error carries the reason Open-Meteo gives (for HTTP 429: which limit
+    of the address is used up - minute, hour or day)."""
+    r = session.get(url, timeout=OM_TIMEOUT, headers={"User-Agent": UA})
+    if r.status_code != 200:
+        try:
+            reason = r.json().get("reason")
+        except Exception:  # noqa: BLE001
+            reason = None
+        raise OpenMeteoError(f"HTTP {r.status_code}" + (f" ({clip(reason, 110)})" if reason else ""))
+    return r.json()
+
+
+def om_code() -> str:
+    """Identifies this version of the script. Stored data is only used by the version that wrote it: after a
+    change the fields of the request or the keys of the computed thermal regions may be different."""
+    return f"{zlib.crc32(Path(__file__).read_bytes()):08x}"
+
+
+def om_hours(h, now: datetime):
+    """The hourly block cut to the OM_ROWS hours from the current local hour on (what Open-Meteo returns for
+    forecast_hours=12 at that moment). None if no hour is left."""
+    if not isinstance(h, dict) or not isinstance(h.get("time"), list):
+        return None
+    first = now.astimezone(TZ).strftime("%Y-%m-%dT%H:00")
+    idx = [i for i, t in enumerate(h["time"]) if str(t) >= first][:OM_ROWS]
+    if not idx:
+        return None
+    return {k: [v[i] if i < len(v) else None for i in idx] for k, v in h.items() if isinstance(v, list)}
+
+
+def om_stored(cache, part: str, now: datetime):
+    """-> (data, age in minutes) of a stored part if this version of the script wrote it and it still fits `now`
+    (prognose: the hourly block from the current hour on; thermik: the regions computed for today), else
+    (None, None)."""
+    try:
+        if cache["skript"] != om_code():
+            return None, None
+        p = cache[part]
+        age = minutes_since(parse_iso(p["abgerufen_utc"]), now)
+        if part == "prognose":
+            data = om_hours(p["hourly"], now)
+        else:
+            today = p["tag"] == now.astimezone(TZ).date().isoformat()
+            data = p["regionen"] if today and isinstance(p["regionen"], list) and p["regionen"] else None
+        return (data, max(0, age)) if data is not None and age is not None else (None, None)
+    except (KeyError, TypeError, AttributeError):
+        return None, None
+
+
+def om_slot(now: datetime):
+    """Start (UTC) of the briefing slot that begins within the next OM_LEAD_MIN minutes, else None."""
+    slots, _, _ = slots_for(now.astimezone(TZ).date())
+    return next((s for _, s in slots if s - timedelta(minutes=OM_LEAD_MIN) <= now < s), None)
+
+
+def om_due(cache, part: str, now: datetime, for_briefing: bool = False):
+    """-> (due, reason). The job fetches a part during the lead time of a slot if nothing usable is stored or the
+    stored data is OM_REFRESH_MIN old; the briefing (for_briefing) fetches it if nothing usable is stored or the
+    stored data is older than OM_FRESH_MIN."""
+    _, age = om_stored(cache, part, now)
+    if for_briefing:
+        if age is None:
+            return True, "nothing usable stored"
+        return age > OM_FRESH_MIN, f"stored {age} min ago"
+    start = om_slot(now)
+    if start is None:
+        return False, f"no briefing slot within the next {OM_LEAD_MIN} min"
+    if age is None:
+        return True, f"nothing usable stored, slot at {hhmm(start)}"
+    return age >= OM_REFRESH_MIN, f"stored {age} min ago, slot at {hhmm(start)}"
+
+
+def om_fetch(part: str, session, now: datetime, retry: bool) -> dict:
+    """One part from Open-Meteo in the form it is stored. Raises on any failure."""
+    if part == "prognose":
+        return {"hourly": fetch_forecast(session, retry)}
+    day = now.astimezone(TZ).date()
+    return {"tag": day.isoformat(), "regionen": thermik_forecast(session, now, sun_times(day)[1], retry)}
+
+
+def om_write(cache: dict) -> None:
+    """Atomic write like write_json(). One line: the file is only read by this script."""
+    OM_FILE.parent.mkdir(parents=True, exist_ok=True)
+    tmp = OM_FILE.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(cache, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+    os.replace(tmp, OM_FILE)
+
+
+def om_refresh(session, now: datetime, for_briefing: bool = False):
+    """Fetches the parts that are due and stores them in OM_FILE. -> (cache, {part: (status, detail)}).
+    status: "kept" (nothing due), "stored" or "failed" (network error, HTTP status, unusable answer: nothing is
+    written for that part, the next run tries again from another runner). The job makes one attempt per part; the
+    briefing repeats an attempt once, unless a part has already failed in this run (same address).
+    session=None: a requests session is created only if a fetch is due."""
+    cache = load_json(OM_FILE)
+    code = om_code()
+    parts = ({k: cache[k] for k, _ in OM_PARTS if k in cache}
+             if isinstance(cache, dict) and cache.get("skript") == code else {})
+    new = {"schema_version": 1, "quelle": OM_QUELLE, "skript": code, **parts}
+    result = {}
+    for part, _ in OM_PARTS:
+        due, reason = om_due(new, part, now, for_briefing)
+        if not due:
+            result[part] = ("kept", reason)
+            continue
+        try:
+            if session is None:
+                import requests  # installed by the workflow
+                session = requests.Session()
+            retry = for_briefing and not any(r[0] == "failed" for r in result.values())
+            new[part] = {"abgerufen_utc": iso(now), **om_fetch(part, session, now, retry)}
+            result[part] = ("stored", reason)
+        except Exception as e:  # noqa: BLE001
+            result[part] = ("failed", clip(f"{type(e).__name__}: {e}", 160))
+    if any(r[0] == "stored" for r in result.values()):
+        try:
+            om_write(new)
+        except (OSError, ValueError) as e:   # the briefing of this run can still use what was fetched
+            print(f"Open-Meteo: {OM_FILE.name} not written ({type(e).__name__}: {e})", file=sys.stderr)
+    return new, result
+
+
+def om_inputs(session, now: datetime, errors: list):
+    """-> (hourly, thermik, info) for the briefing. Recent stored data is used as it is; otherwise the briefing asks
+    Open-Meteo itself and, if that fails, falls back on stored data up to OM_MAX_AGE_MIN old. A part that is not
+    available is None, and the reason goes to `errors` (inputs.fehler). info: record field "open_meteo"."""
+    cache, result = om_refresh(session, now, for_briefing=True)
+    data, info = {}, {}
+    for part, label in OM_PARTS:
+        status, detail = result[part]
+        print(f"Open-Meteo {part}: {status} ({detail})", file=sys.stderr)
+        problem = detail if status == "failed" else None
+        value, age = om_stored(cache, part, now)
+        if age is not None and age > OM_MAX_AGE_MIN:
+            value, age = None, None
+        if value is None:
+            errors.append(clip(f"{label}: {problem or 'nichts Brauchbares gespeichert'}", 160))
+        data[part] = value
+        # zwischenspeicher: not fetched by this run itself; abruf_fehler: this run asked Open-Meteo and failed
+        info[part] = {"ok": value is not None,
+                      "abgerufen_utc": cache[part]["abgerufen_utc"] if value is not None else None, "alter_min": age,
+                      "zwischenspeicher": status != "stored" if value is not None else None, "abruf_fehler": problem}
+    return data["prognose"], data["thermik"], info
+
+
+def om_stand(info, part: str, now: datetime) -> str:
+    """Fetch time of a part for the model, as an insert for the headline of its block:
+    «, abgerufen vor 41 min um 10:19 Lokalzeit»; data older than OM_FRESH_MIN is marked «älterer Abruf»."""
+    p = info.get(part) if isinstance(info, dict) else None
+    fetched = parse_iso(p.get("abgerufen_utc")) if isinstance(p, dict) else None
+    if fetched is None:
+        return ""
+    age = max(0, minutes_since(fetched, now))
+    return (f", abgerufen vor {age_text(age)} um {hhmm(fetched)} Lokalzeit"
+            + (" (älterer Abruf)" if age > OM_FRESH_MIN else ""))
+
+
+def om_main(now: datetime) -> int:
+    """`--forecast`, a step of the cam-status job in every run: fetches only in the lead time of a briefing slot.
+    Exit code 1: a fetch was tried and failed (the step has continue-on-error)."""
+    _, result = om_refresh(None, now)
+    for part, _ in OM_PARTS:
+        print(f"Open-Meteo {part}: {result[part][0]} ({result[part][1]})")
+    return 1 if any(r[0] == "failed" for r in result.values()) else 0
 
 
 # ── DABS (Daily Airspace Bulletin Switzerland, skybriefing.com) ─────────────
@@ -1985,9 +2176,10 @@ def run_briefing(client, anthropic, record: dict, now: datetime) -> bool:
     if station is None:
         input_errors.append("Wetterstation: keine Daten (weder live noch im Repo)")
     metars = attempt("METAR", fetch_metar, session)
-    hourly = attempt("Prognose Open-Meteo", fetch_forecast, session)
+    # forecast and thermal forecast: from the store (data/open_meteo.json) if recent, else fetched here
+    hourly, thermik, om = attempt("Open-Meteo", om_inputs, session, now, input_errors, default=(None, None, None))
+    record["open_meteo"] = om   # source and age of both parts, kept even if the Claude call fails
     rain3 = attempt("Regenwahrscheinlichkeit 3 h", rain_next_3h, hourly, now)
-    thermik = attempt("Thermikprognose", thermik_forecast, session, now, sset, hourly is not None)
     cap_reason = (f"Regenwahrscheinlichkeit {rain3} % in den nächsten 3 Stunden"
                   if rain3 is not None and rain3 >= 50 else "")
     dabs = attempt("DABS", dabs_block, session, now, sset)
@@ -2022,10 +2214,10 @@ def run_briefing(client, anthropic, record: dict, now: datetime) -> bool:
         safe_text("METAR", metar_text, metars, now),
         safe_text("ED-R (dipul)", edr_text, edr),
         safe_text("DABS", dabs_text, dabs),
-        safe_text("Prognose Open-Meteo", forecast_text, hourly),
+        safe_text("Prognose Open-Meteo", forecast_text, hourly, om_stand(om, "prognose", now)),
         (f"Regenwahrscheinlichkeit der nächsten 3 Stunden (Open-Meteo): höchstens {rain3} %."
          if rain3 is not None else "Regenwahrscheinlichkeit der nächsten 3 Stunden: nicht verfügbar."),
-        (safe_text("Thermikprognose", thermik_text, thermik) if thermik
+        (safe_text("Thermikprognose", thermik_text, thermik, om_stand(om, "thermik", now)) if thermik
          else "Thermikprognose Fluggebiete: nicht verfügbar."),
         f"Obergrenze für briefing.lage: maessig (Grund: {cap_reason})." if cap_reason else "",
     ] if part)
@@ -2187,6 +2379,8 @@ def main(argv) -> int:
     now = now_utc()
     if "--dabs" in argv:   # DABS store only: needs neither the briefing record nor the API key
         return dabs_main(now)
+    if "--forecast" in argv:   # Open-Meteo store only, like --dabs
+        return om_main(now)
     prev = load_json(OUT_FILE)
     if prev is None and OUT_FILE.exists():
         # unreadable state file: never start paid calls with reset counters

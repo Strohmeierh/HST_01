@@ -1,0 +1,10 @@
+{
+  "schema": 2,
+  "default": "dr400",
+  "aircraft": [
+    { "id": "dr400", "label": "Robin DR400/200R", "registrations": ["D-ESIA"], "file": "dr400.json" },
+    { "id": "hk36r", "label": "Super Dimona HK36R", "registrations": ["D-KBKB"], "file": "hk36r.json" },
+    { "id": "ev97", "label": "Eurostar SLW-Sport", "registrations": ["D-MZWH"], "file": "ev97.json" },
+    { "id": "arcusm", "label": "Arcus M", "registrations": ["D-KHSM", "D-KXHW"], "file": "arcusm.json" }
+  ]
+}

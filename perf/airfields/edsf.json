@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "icao": "EDSF",
+  "name": "Hütten-Hotzenwald",
+  "source": {
+    "title": "Verfügbare Bahnlänge EDSF (Luftbild mit Längenmarken, Startrichtung 11 und 29)",
+    "edition": "Blatt des Benutzers vom 20.11.2026 (data/AFM/EDSF-Verfuegbare-Bahnlaenge.pdf im Projektordner)",
+    "transcribed": "2026-11-20, aus dem Blatt abgelesen: 760 m für Startrichtung 11 und für Startrichtung 29",
+    "lengthsRef": "Landestrecke gleich 760 m in beiden Richtungen, vom Benutzer am 20.11.2026 bestätigt"
+  },
+  "elevation": { "value": 2885, "unit": "ft" },
+  "dimensions": "760 m Gras",
+  "runways": [
+    { "id": "11", "bearingTrue": 110, "surface": "grass", "takeoffAvailable": { "value": 760, "unit": "m" }, "landingAvailable": { "value": 760, "unit": "m" } },
+    { "id": "29", "bearingTrue": 290, "surface": "grass", "takeoffAvailable": { "value": 760, "unit": "m" }, "landingAvailable": { "value": 760, "unit": "m" } }
+  ],
+  "remarks": [
+    "Platzhöhe 880 m MSL (2885 ft) wie im Kopf der EDSF-Seite.",
+    "Pistenrichtung 110°/290° wie im Pistendiagramm der Seite; im Luftbild des Blatts (genordet angenommen) etwa 108°/288° rechtweisend."
+  ]
+}

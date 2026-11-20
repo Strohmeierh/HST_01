@@ -1,0 +1,79 @@
+{
+  "schema": 3,
+  "id": "ev97",
+  "label": "Eurostar SLW-Sport",
+  "mass": { "kg": 600, "lb": 1323 },
+  "massNoteDe": "Maximales Abfluggewicht 600 kg (Flug- und Betriebshandbuch, Kapitel 2 und 6); die Leistungsdaten gelten für 600 kg. Das Handbuch nennt nur kg; die Pfund sind umgerechnet.",
+  "variantDe": "EV-97 Eurostar SLW-Sport (Ultraleichtflugzeug), Rotax 912 ULS (100 PS), 3-Blatt-Festpropeller Neuform",
+  "techniqueDe": "Start mit Klappenstellung 1, Landung mit Klappe 2 (Landestellung).",
+  "readingRuleDe": "Das Handbuch nennt nur Werte für Meereshöhe, Normaldruck, 15 °C und Windstille. Für Druckhöhe und Temperatur ist eine allgemeine Faustregel eingerechnet (UK CAA Safety Sense Leaflet 7), nicht aus dem Handbuch: Start +10 % je 1000 ft Druckhöhe und +10 % je 10 °C über der Standardtemperatur auf dieser Druckhöhe, Landung je +5 %. Unter Meereshöhe und unter der Standardtemperatur gibt es keine Gutschrift.",
+  "footerDe": "Kein AFM-Wert für die Platzhöhe: Ausgangspunkt sind die Handbuchwerte für Gras auf Meereshöhe bei 15 °C und Windstille (600 kg); Druckhöhe und Temperatur sind mit einer allgemeinen Faustregel (UK CAA) eingerechnet. Das Handbuch nennt keine Windkorrektur (ohne Gutschrift für Gegenwind gerechnet). Bei Regen ist der Zuschlag des Handbuchs für den Start eingerechnet (ca. +15 %); für die Landung nennt es keinen. Nicht berücksichtigt sind Pistenneigung, hohes Gras, Zustand von Flugzeug und Motor sowie die Pilotentechnik. Massgebend sind das Handbuch der Maschine und die eigene Beurteilung.",
+  "sources": {
+    "afm": {
+      "labelDe": "Flughandbuch",
+      "title": "Flug- und Betriebshandbuch EUROSTAR SLW-Sport",
+      "publisher": "FSZ Bautzen GmbH & Co.",
+      "issue": "Neuausgabe 03-2023, Seiten mit Stand 02-2021",
+      "applicabilityDe": "Handbuch der D-MZWH (Werk-Nr. 2023-4406).",
+      "caveatDe": "Stand der vorliegenden Kopie; massgebend ist das Handbuch im Flugzeug."
+    },
+    "rule": {
+      "labelDe": "Faustregel",
+      "title": "UK CAA Safety Sense Leaflet 7 «Aeroplane Performance»",
+      "applicabilityDe": "Allgemeine Faustregel, nicht aus dem Handbuch; auf Wunsch des Benutzers eingerechnet (20.11.2026), weil das Handbuch nur Werte für Meereshöhe und 15 °C nennt.",
+      "caveatDe": "Ersetzt keine Leistungsdaten des Herstellers."
+    }
+  },
+  "charts": {
+    "takeoff": {
+      "source": "afm",
+      "title": "Startstrecke",
+      "ref": { "figure": "5.2.3 Startstrecke", "page": "35" },
+      "conditionsDe": "Meereshöhe, Normaldruck, 15 °C, Windstille, 600 kg, Klappenstellung 1, ebene Bahn mit kurzem Gras und Grasnabe in gutem Zustand.",
+      "notesDe": [
+        "Verwendet sind die Werte für Gras: Startstrecke 238 m, Strecke über 15 m 361 m (Hartbelag 190 und 289 m nicht verwendet).",
+        "Druckhöhe und Temperatur nach Faustregel (UK CAA), nicht aus dem Handbuch: +10 % je 1000 ft Druckhöhe und +10 % je 10 °C über der Standardtemperatur.",
+        "Hohes Gras, Regen o. ä.: Startstrecke ca. +15 % (Handbuch); bei nasser Piste auf beide Strecken eingerechnet.",
+        "Das Handbuch nennt keine Windkorrektur: gerechnet ohne Gutschrift für Gegenwind.",
+        "Richtwerte des Handbuchs für Wind: Seitenwind höchstens 16 kt, Rückenwind höchstens 6 kt."
+      ],
+      "base": { "surface": "grass", "surfaceCondition": "dry" },
+      "table": {
+        "type": "point",
+        "conditions": { "pressureAltitudeFt": 0, "temperatureC": 15 },
+        "outputs": [{ "id": "groundRoll", "unit": "m" }, { "id": "overObstacle", "unit": "m" }],
+        "obstacle": { "value": 50, "unit": "ft" },
+        "values": [238, 361]
+      },
+      "corrections": [
+        { "kind": "altitudeRule", "percentPer1000ft": 10, "labelDe": "Faustregel Druckhöhe: +10 % je 1000 ft", "refDe": "UK CAA Safety Sense Leaflet 7, nicht aus dem Handbuch" },
+        { "kind": "temperatureRule", "percentPer10C": 10, "reference": "isa", "labelDe": "Faustregel Temperatur: +10 % je 10 °C über der Standardtemperatur", "refDe": "UK CAA Safety Sense Leaflet 7, nicht aus dem Handbuch" },
+        { "kind": "factor", "when": "wet", "surface": "grass", "factor": 1.15, "minimum": false, "labelDe": "hohes Gras, Regen o. ä.", "refDe": "ACHTUNG unter 5.2.3, S. 35" }
+      ]
+    },
+    "landing": {
+      "source": "afm",
+      "title": "Landestrecke",
+      "ref": { "figure": "5.2.4 Landestrecke", "page": "35" },
+      "conditionsDe": "Meereshöhe, Normaldruck, 15 °C, Windstille, Klappe 2 (Landestellung), Gras.",
+      "notesDe": [
+        "Verwendet sind die Werte für Gras: Landerollstrecke gebremst 210 m, Landestrecke über 15 m 530 m (Hartbelag 220 und 550 m nicht verwendet).",
+        "Druckhöhe und Temperatur nach Faustregel (UK CAA), nicht aus dem Handbuch: +5 % je 1000 ft Druckhöhe und +5 % je 10 °C über der Standardtemperatur.",
+        "Für nasses Gras nennt das Handbuch bei der Landung keinen Wert.",
+        "Das Handbuch nennt keine Windkorrektur: gerechnet ohne Gutschrift für Gegenwind."
+      ],
+      "base": { "surface": "grass", "surfaceCondition": "dry" },
+      "table": {
+        "type": "point",
+        "conditions": { "pressureAltitudeFt": 0, "temperatureC": 15 },
+        "outputs": [{ "id": "groundRoll", "unit": "m" }, { "id": "overObstacle", "unit": "m" }],
+        "obstacle": { "value": 50, "unit": "ft" },
+        "values": [210, 530]
+      },
+      "corrections": [
+        { "kind": "altitudeRule", "percentPer1000ft": 5, "labelDe": "Faustregel Druckhöhe: +5 % je 1000 ft", "refDe": "UK CAA Safety Sense Leaflet 7, nicht aus dem Handbuch" },
+        { "kind": "temperatureRule", "percentPer10C": 5, "reference": "isa", "labelDe": "Faustregel Temperatur: +5 % je 10 °C über der Standardtemperatur", "refDe": "UK CAA Safety Sense Leaflet 7, nicht aus dem Handbuch" }
+      ]
+    }
+  }
+}

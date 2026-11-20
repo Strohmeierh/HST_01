@@ -1,0 +1,75 @@
+{
+  "schema": 3,
+  "id": "hk36r",
+  "label": "Super Dimona HK36R",
+  "mass": { "kg": 770, "lb": 1698 },
+  "massNoteDe": "Höchstzulässige Start- und Landemasse 770 kg (Flughandbuch Abschnitt 2); Wägebericht der D-KBKB vom 03.07.2023: Höchstmasse 770 kg, Leermasse 594,0 kg. Das Handbuch nennt nur kg; die Pfund sind umgerechnet.",
+  "variantDe": "HK 36 R «Super Dimona», Rotax 912 S (100 PS), Verstellpropeller",
+  "techniqueDe": "Vollast, Propeller auf Automatik mit 2385 U/min, Abheben mit 90 km/h (49 kt), Steigflug mit 95 km/h.",
+  "readingRuleDe": "Druckhöhe (in m), Temperatur und Gegenwindkomponente linear zwischen den Tabellenwerten interpoliert; unter dem kleinsten Tabellenwert gilt dieser (unter 0 °C die Spalte 0 °C), über der grössten Druckhöhe (1200 m) oder Temperatur (30 °C) gibt es keinen Wert. Über 15 kt Gegenwind gilt der Wert für 15 kt.",
+  "footerDe": "Richtwert nach Flughandbuch ohne eigenen Sicherheitszuschlag: Höchstmasse 770 kg, Vollast, Propeller Automatik; Druckhöhe, Temperatur und Gegenwind zwischen den Tabellenwerten linear interpoliert; Graspiste mit dem Mindestzuschlag des Handbuchs (Startrollstrecke +20 %). Eine Landestrecke nennt das Handbuch nicht. Für nasses Gras nennt das Handbuch keinen Wert. Nicht berücksichtigt sind Pistenneigung, Grasnarbe, Zustand von Flugzeug und Motor sowie die Pilotentechnik. Massgebend sind das Flughandbuch der Maschine und die eigene Beurteilung.",
+  "sources": {
+    "afm": {
+      "labelDe": "Flughandbuch",
+      "title": "Flughandbuch für die Motorsegler HK36 R und HK 36 TS",
+      "publisher": "Gomolzig Flugzeug- und Maschinenbau GmbH, Schwelm",
+      "issue": "Ausgabe 5.10.2001 (Abschnitt 5 LBA-anerkannt)",
+      "applicabilityDe": "Handbuch der D-KBKB (HK 36 R, Werk-Nr. 36323 laut Wägebericht).",
+      "caveatDe": "Stand der vorliegenden Kopie; massgebend ist das Flughandbuch im Flugzeug."
+    }
+  },
+  "charts": {
+    "takeoff": {
+      "source": "afm",
+      "title": "Starttabelle",
+      "ref": { "figure": "5.3.3 Starttabelle", "page": "5-7" },
+      "conditionsDe": "Vollast, Höchstmasse, Propeller auf Automatik mit 2385 U/min, Abheben mit 90 km/h (49 kt), Steigflug mit 95 km/h, ebene Startstrecke mit Asphaltbelag.",
+      "notesDe": [
+        "Gegenwindkomponente 0, 5, 10 und 15 kt stehen in der Tabelle (dazwischen linear, über 15 kt der Wert für 15 kt).",
+        "Graspiste: je nach Untergrund mindestens 20 % längere Startrollstrecke; der Zuschlag gilt auch für die Strecke über 15 m.",
+        "Für nasses Gras nennt das Handbuch keinen Wert; Regen, Seitenwind, Windscherung, unebenes Gelände und hohe Grasnarbe können die Startstrecke erheblich verlängern.",
+        "Die Werte enthalten laut Handbuch keine Sicherheitsreserven."
+      ],
+      "base": { "surface": "paved", "surfaceCondition": "dry" },
+      "table": {
+        "type": "grid",
+        "axes": [
+          { "quantity": "pressureAltitude", "unit": "m", "values": [0, 400, 800, 1200], "read": "linear", "below": "lowest", "above": "none" },
+          { "quantity": "temperature", "unit": "degC", "values": [0, 15, 30], "read": "linear", "below": "lowest", "above": "none" },
+          { "quantity": "headwind", "unit": "kt", "values": [0, 5, 10, 15], "read": "linear", "below": "lowest", "above": "highest" }
+        ],
+        "outputs": [{ "id": "groundRoll", "unit": "m" }, { "id": "overObstacle", "unit": "m" }],
+        "obstacle": { "value": 50, "unit": "ft" },
+        "cells": [
+          [
+            [[142, 220], [115, 185], [90, 152], [68, 122]],
+            [[166, 257], [134, 216], [106, 179], [81, 145]],
+            [[195, 302], [159, 256], [126, 212], [98, 174]]
+          ],
+          [
+            [[156, 242], [126, 203], [100, 169], [76, 136]],
+            [[184, 285], [150, 241], [119, 200], [92, 164]],
+            [[218, 337], [179, 287], [143, 249], [111, 196]]
+          ],
+          [
+            [[176, 271], [142, 229], [113, 190], [88, 156]],
+            [[206, 319], [168, 269], [135, 226], [105, 185]],
+            [[243, 377], [201, 322], [161, 270], [126, 223]]
+          ],
+          [
+            [[191, 296], [156, 251], [125, 210], [97, 172]],
+            [[223, 346], [183, 295], [148, 248], [116, 205]],
+            [[265, 411], [219, 352], [177, 297], [141, 237]]
+          ]
+        ]
+      },
+      "corrections": [
+        { "kind": "surface", "type": "addPercentOf", "surface": "grass", "surfaceCondition": "dry", "percent": 20, "of": "groundRoll", "minimum": true }
+      ]
+    },
+    "landing": {
+      "absent": true,
+      "reasonDe": "Das Flughandbuch der Super Dimona nennt keine Landestrecke."
+    }
+  }
+}

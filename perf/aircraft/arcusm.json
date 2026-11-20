@@ -1,0 +1,59 @@
+{
+  "schema": 3,
+  "id": "arcusm",
+  "label": "Arcus M",
+  "mass": { "kg": 800, "lb": 1764 },
+  "massNoteDe": "Höchstzulässige Flugmasse 800 kg (Abschnitt 2.6); die Startstrecken gelten für 800 kg und die vorderste Schwerpunktlage. Das Handbuch nennt nur kg; die Pfund sind umgerechnet.",
+  "variantDe": "Arcus M, Klapptriebwerk Solo 2625-02i",
+  "techniqueDe": "Abheben mit ca. 82 km/h, 95 km/h beim Überfliegen des 15-m-Hindernisses.",
+  "readingRuleDe": "Druckhöhe (in m) und Temperatur linear zwischen den Tabellenwerten interpoliert; unter dem kleinsten Tabellenwert gilt dieser (unter −15 °C die Spalte −15 °C), über der grössten Druckhöhe (2000 m) oder Temperatur (30 °C) gibt es keinen Wert.",
+  "footerDe": "Richtwert nach Flughandbuch ohne eigenen Sicherheitszuschlag: Flugmasse 800 kg, vorderste Schwerpunktlage; Druckhöhe und Temperatur zwischen den Tabellenwerten linear interpoliert; harte ebene Graspiste mit ca. +20 % der Rollstrecke. Das Handbuch nennt keine Windkorrektur (ohne Gutschrift für Gegenwind gerechnet) und keine Landestrecke. Feuchter und weicher Boden verlängert die Strecken beträchtlich; einen Wert dafür nennt das Handbuch nicht. Nicht berücksichtigt sind Pistenneigung, Zustand von Flugzeug und Motor sowie die Pilotentechnik. Massgebend sind das Flughandbuch der Maschine und die eigene Beurteilung.",
+  "sources": {
+    "afm": {
+      "labelDe": "Flughandbuch",
+      "title": "Flughandbuch für den Motorsegler Arcus M",
+      "publisher": "Schempp-Hirth Flugzeugbau GmbH, Kirchheim/Teck",
+      "issue": "Ausgabe Oktober 2012, ohne eingetragene Berichtigungen und ohne eingefügte Ergänzungen (Abschnitt 9.2 leer)",
+      "approval": "EASA Type Certificate EASA.A.532",
+      "applicabilityDe": "Handbuch für die D-KHSM und die D-KXHW (die Kopie nennt kein Kennzeichen).",
+      "caveatDe": "Stand der vorliegenden Kopie; massgebend ist das Flughandbuch im Flugzeug."
+    }
+  },
+  "charts": {
+    "takeoff": {
+      "source": "afm",
+      "title": "Startstrecken (bei Windstille)",
+      "ref": { "figure": "5.2.3 Startstrecken", "page": "5.2.3" },
+      "conditionsDe": "Maximale Flugmasse 800 kg, vorderste Schwerpunktlage, Windstille, Hartbelagpiste; Abheben mit ca. 82 km/h, 95 km/h über dem 15-m-Hindernis.",
+      "notesDe": [
+        "Das Handbuch nennt keine Windkorrektur: gerechnet ohne Gutschrift für Gegenwind.",
+        "Harte ebene Graspiste: Rollstrecke ca. +20 % der Tabellenwerte; der Zuschlag gilt auch für die Strecke über 15 m.",
+        "Feuchter und weicher Boden verlängert Roll- und Startstrecke beträchtlich; einen Wert dafür nennt das Handbuch nicht."
+      ],
+      "base": { "surface": "paved", "surfaceCondition": "dry" },
+      "table": {
+        "type": "grid",
+        "axes": [
+          { "quantity": "pressureAltitude", "unit": "m", "values": [0, 500, 1000, 1500, 2000], "read": "linear", "below": "lowest", "above": "none" },
+          { "quantity": "temperature", "unit": "degC", "values": [-15, 0, 15, 30], "read": "linear", "below": "lowest", "above": "none" }
+        ],
+        "outputs": [{ "id": "groundRoll", "unit": "m" }, { "id": "overObstacle", "unit": "m" }],
+        "obstacle": { "value": 50, "unit": "ft" },
+        "cells": [
+          [[183, 354], [207, 400], [233, 450], [260, 504]],
+          [[199, 384], [225, 435], [253, 490], [283, 548]],
+          [[216, 418], [245, 474], [275, 533], [308, 596]],
+          [[235, 456], [266, 516], [300, 580], [335, 649]],
+          [[257, 497], [291, 562], [327, 633], [365, 707]]
+        ]
+      },
+      "corrections": [
+        { "kind": "surface", "type": "addPercentOf", "surface": "grass", "surfaceCondition": "dry", "percent": 20, "of": "groundRoll", "minimum": false }
+      ]
+    },
+    "landing": {
+      "absent": true,
+      "reasonDe": "Das Flughandbuch des Arcus M nennt keine Landestrecke."
+    }
+  }
+}

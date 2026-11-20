@@ -1,0 +1,88 @@
+{
+  "_hinweis": "Zweitabschrift der AFM-Werte, unabhängig von perf/aircraft/*.json und perf/airfields/edsf.json. Tabellen vom Prüfer am Seitenbild abgetippt (20.11.2026, Nachrechnung pruefer/calc.js), Massen und Zuschläge aus den AFM-Texten, Pisten aus dem Blatt «Verfügbare Bahnlänge EDSF» und dem Entscheid des Benutzers (plan-edsf.md). tests/perf-daten.test.js prüft die Datendateien Zelle für Zelle dagegen. Wer Daten ändert, muss diese Abschrift bewusst und am Seitenbild nachführen.",
+  "dr400": {
+    "quelle": "Flughandbuch DR 400/200 R (D-ESIA), Abschnitt 5: Startleistungen S. 5.03, Landeleistungen S. 5.08, Spalten in m",
+    "_layout": "start/landung[Gewicht kg][Zeile Zp][Spalte Std−20, Std, Std+20] = [Rollstrecke, Strecke über 15 m]",
+    "massKg": [1100,1000],
+    "zpFt": [0,2500,5000],
+    "stdTempC": [15,7,-1],
+    "abweichungC": [-20,0,20],
+    "tabelleBelag": "paved",
+    "start": {
+      "1000": [[[135,260],[155,300],[180,350]],[[165,315],[190,370],[220,430]],[[200,470],[235,555],[275,650]]],
+      "1100": [[[175,345],[200,400],[235,465]],[[215,420],[250,490],[290,570]],[[260,515],[305,605],[355,705]]]
+    },
+    "landung": {
+      "1000": [[[140,330],[160,385],[185,445]],[[145,345],[170,405],[200,470]],[[155,365],[180,430],[210,500]]],
+      "1100": [[[150,355],[175,415],[205,480]],[[160,375],[185,440],[215,510]],[[170,390],[200,460],[235,535]]]
+    },
+    "gegenwindFaktoren": [[0,1],[10,0.85],[20,0.65],[30,0.55]],
+    "grasProzentJeStrecke": 15
+  },
+  "hk36r": {
+    "quelle": "Flughandbuch HK 36 R (D-KBKB), 5.3.3 Starttabelle S. 5-7; Höchstzulässige Start- und Landemasse 770 kg (Abschnitt 2); Graspiste «mindestens 20 % längere Startrollstrecken»",
+    "_layout": "zeilen[Gegenwind kt][OAT °C] = [Druckhöhe 0 m: s1, s2, 400 m: s1, s2, 800 m: s1, s2, 1200 m: s1, s2]; s1 = Rollstrecke, s2 = Strecke über 15 m",
+    "massKg": 770,
+    "druckhoeheM": [0,400,800,1200],
+    "oatC": [0,15,30],
+    "gegenwindKt": [0,5,10,15],
+    "tabelleBelag": "paved",
+    "zeilen": {
+      "0": {
+        "0": [142,220,156,242,176,271,191,296],
+        "15": [166,257,184,285,206,319,223,346],
+        "30": [195,302,218,337,243,377,265,411]
+      },
+      "5": {
+        "0": [115,185,126,203,142,229,156,251],
+        "15": [134,216,150,241,168,269,183,295],
+        "30": [159,256,179,287,201,322,219,352]
+      },
+      "10": {
+        "0": [90,152,100,169,113,190,125,210],
+        "15": [106,179,119,200,135,226,148,248],
+        "30": [126,212,143,249,161,270,177,297]
+      },
+      "15": {
+        "0": [68,122,76,136,88,156,97,172],
+        "15": [81,145,92,164,105,185,116,205],
+        "30": [98,174,111,196,126,223,141,237]
+      }
+    },
+    "grasProzentRollstrecke": 20,
+    "grasMindestens": true,
+    "landung": "fehlt"
+  },
+  "arcusm": {
+    "quelle": "Flughandbuch Arcus M, 5.2.3 Startstrecken (bei Windstille), 800 kg; Graspiste «verlängert die Rollstrecke um ca. 20 %»",
+    "_layout": "rollstrecke/startstrecke[Druckhöhe m][OAT °C] (Startstrecke = über 15 m)",
+    "massKg": 800,
+    "druckhoeheM": [0,500,1000,1500,2000],
+    "oatC": [-15,0,15,30],
+    "tabelleBelag": "paved",
+    "rollstrecke": [[183,207,233,260],[199,225,253,283],[216,245,275,308],[235,266,300,335],[257,291,327,365]],
+    "startstrecke": [[354,400,450,504],[384,435,490,548],[418,474,533,596],[456,516,580,649],[497,562,633,707]],
+    "grasProzentRollstrecke": 20,
+    "grasMindestens": false,
+    "landung": "fehlt"
+  },
+  "ev97": {
+    "quelle": "Flug- und Betriebshandbuch EUROSTAR SLW-Sport (D-MZWH), 5.2.3 und 5.2.4 S. 35, Werte für Gras, 600 kg; «hohes Gras, Regen o. ä.: Startstrecke ca. +15 %»; Faustregel UK CAA Safety Sense Leaflet 7 (Entscheid des Benutzers 20.11.2026)",
+    "massKg": 600,
+    "tabelleBelag": "grass",
+    "startGras": [238,361],
+    "landungGras": [210,530],
+    "faustregelStart": {"prozentJe1000ft": 10, "prozentJe10C": 10},
+    "faustregelLandung": {"prozentJe1000ft": 5, "prozentJe10C": 5},
+    "faustregelBisFt": 10000,
+    "naesseFaktorStart": 1.15
+  },
+  "edsf": {
+    "quelle": "Blatt «Verfügbare Bahnlänge EDSF» und Entscheid des Benutzers 20.11.2026: 760 m Start und Landung, beide Richtungen, Gras",
+    "elevationFt": 2885,
+    "pisten": [
+      {"id": "11", "rechtweisend": 110, "belag": "grass", "startM": 760, "landungM": 760},
+      {"id": "29", "rechtweisend": 290, "belag": "grass", "startM": 760, "landungM": 760}
+    ]
+  }
+}

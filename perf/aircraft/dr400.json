@@ -1,0 +1,132 @@
+{
+  "schema": 3,
+  "id": "dr400",
+  "label": "Robin DR400/200R",
+  "mass": { "kg": 1100, "lb": 2425 },
+  "massNoteDe": "Höchstzulässiges Fluggewicht beim Start und bei der Landung 1100 kg (2425 lb) in der Kategorie «N» (Abschnitt 2, S. 2.04); in der Kategorie «U» 950 kg.",
+  "variantDe": "DR 400/200 R «Remorqueur»",
+  "techniqueDe": "Start: Klappen 1. Raste, Vollgas, Propeller kleine Steigung, Kühlklappe offen, Abheben mit 113 km/h (61 kt), 127 km/h (68 kt) in 15 m Höhe. Landung: Klappen 2. Raste, Leerlauf, 117 km/h (63 kt) in 15 m Höhe, Aufsetzen mit 95 km/h (51 kt).",
+  "readingRuleDe": "Die Tabellen nennen je Höhenzeile (Zp 0, 2500 und 5000 ft) eine Standardtemperatur «Std» (15, 7 und −1 °C) und die Spalten Std − 20, Std und Std + 20 °C. Gerechnet wird mit der Abweichung der Aussentemperatur von dieser Tabellen-Standardtemperatur; sie läuft zwischen den Zeilen linear. Druckhöhe, Temperaturabweichung und Gewicht sind linear zwischen den Tabellenwerten interpoliert; unter dem kleinsten Tabellenwert gilt dieser (unter 1000 kg die Tabelle für 1000 kg), über dem grössten gibt es keinen Wert. Die gedruckten Standardtemperaturen 7 und −1 °C entsprechen der ISA in 4000 und 8000 ft, nicht in 2500 und 5000 ft; die Tabelle wird so gelesen, wie sie gedruckt ist, das ergibt in beiden Deutungen die längere Strecke.",
+  "footerDe": "Richtwert nach AFM ohne eigenen Sicherheitszuschlag: Start und Landung mit dem eingegebenen Gewicht (ohne Eingabe 1100 kg), Druckhöhe, Temperaturabweichung und Gewicht zwischen den Tabellenwerten linear interpoliert, Gegenwind mit den Faktoren des AFM, feste Grasbahn +15 % auf beide Strecken. Für nasses Gras nennt das AFM keinen Wert. Nicht berücksichtigt sind Pistenneigung, Zustand von Flugzeug und Motor sowie die Pilotentechnik. Massgebend sind das Flughandbuch der Maschine und die eigene Beurteilung.",
+  "sources": {
+    "afm": {
+      "labelDe": "Flughandbuch",
+      "title": "Flughandbuch DR 400/200 R",
+      "issue": "Ausgabe 1 – Januar 1993",
+      "applicabilityDe": "Handbuch der D-ESIA (Abschnitte 0 bis 7 als Scan). Nachträge laut Abschnitt 7: Schleppflug, Bannerschleppflug, elektrische Seitenrudertrimmung, Zusatztank, VFR-Nachtflug, Flugregler Century IIB, IFR; keiner ändert die Start- und Landeleistungen ohne Schlepp.",
+      "caveatDe": "Stand der vorliegenden Kopie; massgebend ist das Flughandbuch im Flugzeug."
+    }
+  },
+  "charts": {
+    "takeoff": {
+      "source": "afm",
+      "title": "Startleistungen, Gewicht 1100 kg (2425 lb)",
+      "ref": { "figure": "Abschnitt 5, Startleistungen", "page": "5.03" },
+      "conditionsDe": "Trockene Hartbelagbahn, Windstille, Klappen 1. Raste, Vollgas, kleine Steigung, Kühlklappe offen; Abheben mit 113 km/h (61 kt), 127 km/h (68 kt) in 15 m Höhe.",
+      "notesDe": [
+        "Gegenwind: bei 10 kt × 0,85, bei 20 kt × 0,65, bei 30 kt × 0,55 (dazwischen linear, über 30 kt × 0,55), auf beide Strecken.",
+        "Feste Grasbahn: die Angaben um 15 % erhöhen, auf beide Strecken.",
+        "Für nasses Gras nennt das AFM keinen Wert.",
+        "Verwendet sind die m-Spalten der Tabelle; die ft-Spalten weichen in einzelnen Zellen um wenige Meter ab (Rundung im AFM).",
+        "Nicht gerechnet: Rückenwind (je 2 kt +10 %)."
+      ],
+      "base": { "surface": "paved", "surfaceCondition": "dry" },
+      "massRead": "linear",
+      "table": {
+        "type": "grid",
+        "axes": [
+          { "quantity": "pressureAltitude", "unit": "ft", "values": [0, 2500, 5000], "read": "linear", "below": "lowest", "above": "none" },
+          { "quantity": "temperatureDeviation", "unit": "degC", "values": [-20, 0, 20], "stdTempC": [15, 7, -1], "read": "linear", "below": "lowest", "above": "none" }
+        ],
+        "outputs": [{ "id": "groundRoll", "unit": "m" }, { "id": "overObstacle", "unit": "m" }],
+        "obstacle": { "value": 50, "unit": "ft" },
+        "cells": [
+          [[175, 345], [200, 400], [235, 465]],
+          [[215, 420], [250, 490], [290, 570]],
+          [[260, 515], [305, 605], [355, 705]]
+        ]
+      },
+      "lowerWeights": [
+        {
+          "mass": { "kg": 1000, "lb": 2205 },
+          "title": "Startleistungen, Gewicht 1000 kg (2205 lb)",
+          "ref": { "figure": "Abschnitt 5, Startleistungen", "page": "5.03" },
+          "conditionsRefDe": "Dieselbe Tabelle auf S. 5.03, Spalten «Gewicht 1000 kg (2205 lb)»; Bedingungen und Korrekturen wie für 1100 kg.",
+          "table": {
+            "type": "grid",
+            "axes": [
+              { "quantity": "pressureAltitude", "unit": "ft", "values": [0, 2500, 5000], "read": "linear", "below": "lowest", "above": "none" },
+              { "quantity": "temperatureDeviation", "unit": "degC", "values": [-20, 0, 20], "stdTempC": [15, 7, -1], "read": "linear", "below": "lowest", "above": "none" }
+            ],
+            "outputs": [{ "id": "groundRoll", "unit": "m" }, { "id": "overObstacle", "unit": "m" }],
+            "obstacle": { "value": 50, "unit": "ft" },
+            "cells": [
+              [[135, 260], [155, 300], [180, 350]],
+              [[165, 315], [190, 370], [220, 430]],
+              [[200, 470], [235, 555], [275, 650]]
+            ]
+          }
+        }
+      ],
+      "corrections": [
+        { "kind": "headwind", "type": "factorTable", "unit": "kt", "points": [[0, 1], [10, 0.85], [20, 0.65], [30, 0.55]], "above": "highest" },
+        { "kind": "surface", "type": "percentOfEach", "surface": "grass", "surfaceCondition": "dry", "percent": 15, "minimum": false }
+      ]
+    },
+    "landing": {
+      "source": "afm",
+      "title": "Landeleistungen, Gewicht 1100 kg (2425 lb)",
+      "ref": { "figure": "Abschnitt 5, Landeleistungen", "page": "5.08" },
+      "conditionsDe": "Ebene trockene Landebahn, Windstille, Klappen 2. Raste, Leerlauf; 117 km/h (63 kt) in 15 m Höhe, Aufsetzen mit 95 km/h (51 kt).",
+      "notesDe": [
+        "Gegenwind: bei 10 kt × 0,85, bei 20 kt × 0,65, bei 30 kt × 0,55 (dazwischen linear, über 30 kt × 0,55), auf beide Strecken.",
+        "Feste Grasbahn: die Angaben um 15 % erhöhen, auf beide Strecken.",
+        "Für nasses Gras nennt das AFM keinen Wert.",
+        "Verwendet sind die m-Spalten der Tabelle.",
+        "Nicht gerechnet: Rückenwind (je 2 kt +10 %)."
+      ],
+      "base": { "surface": "paved", "surfaceCondition": "dry" },
+      "massRead": "linear",
+      "table": {
+        "type": "grid",
+        "axes": [
+          { "quantity": "pressureAltitude", "unit": "ft", "values": [0, 2500, 5000], "read": "linear", "below": "lowest", "above": "none" },
+          { "quantity": "temperatureDeviation", "unit": "degC", "values": [-20, 0, 20], "stdTempC": [15, 7, -1], "read": "linear", "below": "lowest", "above": "none" }
+        ],
+        "outputs": [{ "id": "groundRoll", "unit": "m" }, { "id": "overObstacle", "unit": "m" }],
+        "obstacle": { "value": 50, "unit": "ft" },
+        "cells": [
+          [[150, 355], [175, 415], [205, 480]],
+          [[160, 375], [185, 440], [215, 510]],
+          [[170, 390], [200, 460], [235, 535]]
+        ]
+      },
+      "lowerWeights": [
+        {
+          "mass": { "kg": 1000, "lb": 2205 },
+          "title": "Landeleistungen, Gewicht 1000 kg (2205 lb)",
+          "ref": { "figure": "Abschnitt 5, Landeleistungen", "page": "5.08" },
+          "conditionsRefDe": "Dieselbe Tabelle auf S. 5.08, Spalten «Gewicht 1000 kg (2205 lb)»; Bedingungen und Korrekturen wie für 1100 kg.",
+          "table": {
+            "type": "grid",
+            "axes": [
+              { "quantity": "pressureAltitude", "unit": "ft", "values": [0, 2500, 5000], "read": "linear", "below": "lowest", "above": "none" },
+              { "quantity": "temperatureDeviation", "unit": "degC", "values": [-20, 0, 20], "stdTempC": [15, 7, -1], "read": "linear", "below": "lowest", "above": "none" }
+            ],
+            "outputs": [{ "id": "groundRoll", "unit": "m" }, { "id": "overObstacle", "unit": "m" }],
+            "obstacle": { "value": 50, "unit": "ft" },
+            "cells": [
+              [[140, 330], [160, 385], [185, 445]],
+              [[145, 345], [170, 405], [200, 470]],
+              [[155, 365], [180, 430], [210, 500]]
+            ]
+          }
+        }
+      ],
+      "corrections": [
+        { "kind": "headwind", "type": "factorTable", "unit": "kt", "points": [[0, 1], [10, 0.85], [20, 0.65], [30, 0.55]], "above": "highest" },
+        { "kind": "surface", "type": "percentOfEach", "surface": "grass", "surfaceCondition": "dry", "percent": 15, "minimum": false }
+      ]
+    }
+  }
+}

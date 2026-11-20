@@ -1,4 +1,4 @@
-// Anzeigetests für den Start-/Landestreckenrechner EDSF (perf/perf-ui.js VERSION 8, Fork der LSZK-Anzeige VERSION 7):
+// Anzeigetests für den Start-/Landestreckenrechner EDSF (perf/perf-ui.js VERSION 9 mit kurzen Kartentexten, Fork der LSZK-Anzeige VERSION 7):
 // Adapter für window.EDSF_WX, Nässe nur bei Regen laut Station EDSF, Kartentexte je Muster mit den neuen Kernstufen
 // (Druckhöhe in m, Standardtemperatur der Tabelle, Gegenwind in der Tabelle bzw. als Faktortabelle, Belag je Strecke,
 // Faustregel, Landung nach Gewicht, Landung fehlt im AFM), Gewichtsfeld, Fehlertexte und der Browserteil boot().
@@ -126,18 +126,19 @@ function gauge(over) {
 test('Seite → Anzeige: gauge-data.txt über window.EDSF_WX bis zur Karte (Kommazahlen, Sensorausfall, Alter, Richtung 0)', () => {
   let p = parts(edsfWx(gauge(), NOW));
   assert.equal(p.kind, 'result');
-  assert.ok(has(p.body, 'Messwerte Station EDSF, 11:40 Uhr (vor 5 min): 5,6 °C · QNH 1010,0 hPa · Wind 269° / 14,0 kt, Böen 26 kt · Druckhöhe 2.974 ft (907 m)'), text(p.body));
+  assert.ok(has(p.body, 'Station EDSF 11:40 (vor 5 min): 5,6 °C · QNH 1010,0 hPa · Wind 269°/14,0 kt, Böen 26 kt · Druckhöhe 2.974 ft'), text(p.body));
+  assert.ok(!has(p.body, '(907 m)'), 'Meterwert der Druckhöhe nur im Rechenweg');
   assert.ok(has(block(p.body, '29'), 'Start 237 m 466 m 760 m'));
   // Sensorausfall: keine Zahlen
   p = parts(edsfWx(gauge({ SensorContactLost: '1' }), NOW));
   assert.equal(p.kind, 'no-wx');
-  assert.ok(has(p.body, 'Keine aktuellen Messwerte vom Platz – keine Berechnung.'));
+  assert.ok(has(p.body, 'Keine aktuellen Messwerte – keine Berechnung.'));
   assertNoResult(p.body, 'Sensorausfall');
   // Messzeit unlesbar oder 45 min alt: keine Zahlen
   p = parts(edsfWx(gauge({ timeUTC: 'x' }), NOW));
   assert.equal(p.kind, 'no-wx');
   p = parts(edsfWx(gauge(), Date.UTC(2026, 10, 20, 11, 25)), { nowMs: Date.UTC(2026, 10, 20, 11, 25) });
-  assert.ok(has(p.body, 'Messwerte veraltet (Stand 11:40 Uhr, vor 45 min) – keine Berechnung.'), text(p.body));
+  assert.ok(has(p.body, 'Messwerte veraltet (11:40, vor 45 min) – keine Berechnung.'), text(p.body));
   // Richtung 0 (Cumulus: keine Richtung) bei 14 kt: Gegenwindpiste nicht bestimmbar; bei 2 km/h windstill
   p = parts(edsfWx(gauge({ avgbearing: '0' }), NOW));
   assert.equal(p.kind, 'no-direction');
@@ -147,12 +148,13 @@ test('Seite → Anzeige: gauge-data.txt über window.EDSF_WX bis zur Karte (Komm
   assert.ok(has(p.teaser, 'windstill'), text(p.teaser));
   p = parts(edsfWx(gauge({ avgbearing: '0', wspeed: '5' }), NOW));            // 2,7 kt ohne Richtung: beide Pisten
   assert.ok(has(p.teaser, 'ohne Windrichtung'), text(p.teaser));
+  assert.ok(has(p.body, 'Wind 2,6 kt ohne Richtung'), text(p.body));
   // Messwert fehlt: Text nennt ihn
   p = parts(edsfWx(gauge({ press: '---' }), NOW));
   assert.ok(has(p.body, 'Messwert fehlt (QNH) – keine Berechnung.'), text(p.body));
   // Regenrate mit Komma macht nass
   p = parts(edsfWx(gauge({ rrate: '0,2' }), NOW));
-  assert.ok(has(p.body, 'Piste gilt als nass: Die Station EDSF misst Regen (0,2 mm/h).'), text(p.body));
+  assert.ok(has(p.body, 'Nass (Regen 0,2 mm/h):'), text(p.body));
 });
 
 /* ── Nässe: nur Regen laut Station EDSF ────────────────────── */
@@ -177,28 +179,29 @@ test('Nässe: nass genau bei Regenrate > 0; ohne Regenwert unbekannt und trocken
   assert.deepEqual(spy, [false, true, false]);
 });
 
-test('Pistenzustand-Texte: trocken gedämpft, nass im gelben Kasten mit Folge je Phase, unbekannt in der Hinweisfarbe', () => {
-  // trocken: keine Pistenmeldung für EDSF, kein Regen, Belag, Vorbehalt – alles gedämpft, kein Hinweis
+test('Pistenzustand-Texte (kurz): trocken gedämpft, nass im gelben Kasten mit Folge je Phase, Regenwert fehlt in der Hinweisfarbe', () => {
+  // trocken: eine gedämpfte Zeile mit Vorbehalt Tau/Nässe, kein Hinweis
   let html = render(wxEdsf(), { detailsOpen: true });
   const cond = /<div class="perf-cond">([^<]*)<\/div>/.exec(html);
   assert.ok(cond, html);
-  assert.equal(text(cond[1]), ui.TEXT.noReport + ' ' + ui.TEXT.noRain + ' Gerechnet für trockenes Gras. ' + ui.TEXT.reserve);
+  assert.equal(text(cond[1]), 'Trocken gerechnet (Station: kein Regen). Tau und Nässe nach Regen erkennt die Karte nicht.');
   assert.ok(!html.includes('perf-warn') && !html.includes('class="perf-note"'));
-  assert.ok(has(html, 'Piste trocken gerechnet'));
+  assert.ok(has(html, '5,6 °C · trocken'));
   // nass (DR400: das AFM nennt für nasses Gras keinen Wert, Start und Landung)
-  html = render(wxEdsf({ rainMmH: 1.2 }), { detailsOpen: true });
+  html = render(wxEdsf({ rainMmH: 1.4 }), { detailsOpen: true });
   const warn = /<div class="perf-cond perf-warn" role="note"><div>(.*?)<\/div><\/div>/.exec(html);
   assert.ok(warn, html);
-  assert.equal(text(warn[1]), 'Piste gilt als nass: Die Station EDSF misst Regen (1,2 mm/h). Das AFM nennt für nasses Gras keinen Wert; Start- und Landestrecke können deutlich länger sein.');
+  assert.equal(text(warn[1]), 'Nass (Regen 1,4 mm/h): kein AFM-Wert für nasses Gras – Strecken können deutlich länger sein.');
   assert.ok(!html.includes('<div class="perf-cond">'), 'bei Nässe keine gedämpfte Zeile');
-  assert.ok(has(html, 'Piste nass gerechnet') && has(html, 'nasse Piste: kein Wert im AFM, ohne Zuschlag gerechnet'));
+  assert.ok(has(html, '5,6 °C · nass') && has(html, 'nass: kein AFM-Wert, ohne Zuschlag'));
   // Zahlen unverändert (kein Nässewert im AFM)
   assert.ok(has(block(html, '29'), 'Start 237 m 466 m 760 m'));
-  // unbekannt: Hinweis in der Hinweisfarbe, trocken gerechnet, ohne «kein Regen»
+  // Regenwert fehlt: Hinweis in der Hinweisfarbe, trocken gerechnet, Vorbehalt bleibt
   html = render(wxEdsf({ rainMmH: null }), { detailsOpen: true });
-  assert.ok(html.includes('<div class="perf-note">' + ui.TEXT.unknown + '</div>'), html);
-  assert.ok(has(html, ui.TEXT.noReport) && !has(html, ui.TEXT.noRain));
-  assert.ok(has(html, 'Piste trocken gerechnet'));
+  assert.ok(html.includes('<div class="perf-note">Regenwert fehlt: trocken gerechnet, Pistenzustand unbekannt.</div>' +
+    '<div class="perf-cond">Tau und Nässe nach Regen erkennt die Karte nicht.</div>'), html);
+  assert.ok(!has(html, 'kein Regen'));
+  assert.ok(has(html, '5,6 °C · trocken'));
   assert.ok(has(block(html, '29'), 'Start 237 m 466 m 760 m'));
   // Texte ohne LSZK-Bezug
   ['FGZO', 'MeteoSchweiz', 'Speck', 'Stundensumme'].forEach((w) => {
@@ -208,45 +211,51 @@ test('Pistenzustand-Texte: trocken gedämpft, nass im gelben Kasten mit Folge je
   });
 });
 
-test('Nässe je Muster: Eurostar Start ca. +15 % eingerechnet, Landung ohne Wert; Super Dimona und Arcus nur der Start', () => {
+test('Nässe je Muster: Eurostar «Start ca. +15 % (AFM)», Landung ohne AFM-Wert; Super Dimona und Arcus nur der Start', () => {
   // Handrechnung 22,3 °C, nass: Eurostar 402/610 und 258/649, Super Dimona 159/253, Arcus 345/613
-  const wx = wxEdsf({ tempC: 22.3, rainMmH: 0.4 });
-  let html = render(wx, { aircraft: EV97 });
+  const wx = wxEdsf({ tempC: 22.3, rainMmH: 1.4 });
+  let html = render(wx, { aircraft: EV97, detailsOpen: true });
   // Das AFM nennt den Zuschlag nur ungefähr («ca. 15 %»): Zuschläge ohne «mindestens» stehen mit «ca.»
-  assert.ok(has(html, 'Piste gilt als nass: Die Station EDSF misst Regen (0,4 mm/h). Start: ca. +15 % eingerechnet (ACHTUNG unter 5.2.3, S. 35). ' +
-    'Landung: Das AFM nennt für nasses Gras keinen Wert; die Strecke kann deutlich länger sein.'), text(html));
-  // mit minimum: true «mindestens» statt «ca.»
+  assert.ok(has(html, 'Nass (Regen 1,4 mm/h): Start ca. +15 % (AFM). Landung ohne AFM-Wert – kann deutlich länger sein.'), text(html));
+  assert.ok(has(html, 'nass: Faktor 1,15 (AFM, ca.)') && has(html, 'nass: kein AFM-Wert, ohne Zuschlag'), text(details(html)));
+  // mit minimum: true «mind.» statt «ca.»
   const minEv = clone(EV97);
   minEv.charts.takeoff.corrections.forEach((c) => { if (c.kind === 'factor') c.minimum = true; });
-  const hm = render(wx, { aircraft: minEv });
-  assert.ok(has(hm, 'Start: mindestens +15 % eingerechnet (ACHTUNG unter 5.2.3, S. 35).') && !has(hm, 'ca. +15'), text(hm));
+  const hm = render(wx, { aircraft: minEv, detailsOpen: true });
+  assert.ok(has(hm, 'Start mind. +15 % (AFM).') && has(hm, 'nass: Faktor mind. 1,15 (AFM)') && !has(hm, 'ca. +15'), text(hm));
   assert.ok(has(block(html, '29'), 'Start 402 m 610 m 760 m Landung 258 m 649 m 760 m'), text(block(html, '29')));
   html = render(wx, { aircraft: HK36R });
-  assert.ok(has(html, 'Piste gilt als nass: Die Station EDSF misst Regen (0,4 mm/h). Start: Das AFM nennt für nasses Gras keinen Wert; die Strecke kann deutlich länger sein.'), text(html));
-  assert.ok(!has(html, 'Landung: Das AFM nennt für nasses'), 'Landung fehlt im AFM: kein Nässesatz');
+  assert.ok(has(html, 'Nass (Regen 1,4 mm/h): Start ohne AFM-Wert – kann deutlich länger sein.'), text(html));
+  assert.ok(!has(html, 'Landung ohne AFM-Wert'), 'Landung fehlt im AFM: kein Nässesatz');
   assert.ok(has(block(html, '29'), 'Start 159 m 253 m 760 m'));
   html = render(wx, { aircraft: ARCUS });
+  assert.ok(has(html, 'Nass (Regen 1,4 mm/h): Start ohne AFM-Wert – kann deutlich länger sein.'), text(html));
   assert.ok(has(block(html, '29'), 'Start 345 m 613 m 760 m'));
 });
 
 /* ── Referenzfall je Muster ────────────────────────────────── */
 
-test('Referenzfall: Zahlen aller Muster wie die Handrechnung, nur Piste 29, Kopf und Pflichthinweis', () => {
+test('Referenzfall: Zahlen aller Muster wie die Handrechnung, nur Piste 29, Unterzeile, Eingaben und Pflichthinweis', () => {
   const exp = [
-    [DR400, 'Start 237 m 466 m 760 m Landung 171 m 404 m 760 m'],
-    [HK36R, 'Start 130 m 209 m 760 m Landung – – 760 m'],
-    [EV97, 'Start 309 m 469 m 760 m Landung 242 m 609 m 760 m'],
-    [ARCUS, 'Start 303 m 539 m 760 m Landung – – 760 m']
+    [DR400, 'Start 237 m 466 m 760 m Landung 171 m 404 m 760 m', 'D-ESIA · max. 1.100 kg', '1.100 kg, Landung 1.100 kg', 'Start Klappen 1, Landung Klappen 2'],
+    [HK36R, 'Start 130 m 209 m 760 m Landung – – 760 m', 'D-KBKB · max. 770 kg', '770 kg (einzige AFM-Tabelle)', 'Vollast, Propeller Automatik, Asphalt'],
+    [EV97, 'Start 309 m 469 m 760 m Landung 242 m 609 m 760 m', 'D-MZWH · max. 600 kg', '600 kg (einzige AFM-Tabelle)', 'Start Klappen 1, Landung Klappen 2, Gras'],
+    [ARCUS, 'Start 303 m 539 m 760 m Landung – – 760 m', 'D-KHSM · D-KXHW · max. 800 kg', '800 kg (einzige AFM-Tabelle)', '800 kg, Windstille, Hartbelag']
   ];
-  exp.forEach(([ac, s]) => {
+  exp.forEach(([ac, s, sub, mass, afm]) => {
     const html = render(wxEdsf(), { aircraft: ac, detailsOpen: true });
     assertClean(html, ac.id);
     assert.equal(block(html, '11'), null, ac.id + ': Rückenwindpiste gezeigt');
     assert.ok(has(block(html, '29'), s), ac.id + ': ' + text(block(html, '29')));
     assert.ok(html.endsWith('<div class="perf-foot">' + ui.TEXT.advice + '</div>'), ac.id + ': Pflichthinweis');
-    assert.ok(has(html, 'Maximales Abfluggewicht ' + ui.fmtInt(ac.mass.kg) + ' kg (' + ui.fmtInt(ac.mass.lb) + ' lb)'), ac.id);
-    assert.ok(has(html, 'Druckhöhe 2.974 ft = 907 m (QNH 1010,0 hPa, Platzhöhe 2.885 ft)'), ac.id + ': Eingaben');
-    assert.ok(has(html, 'Piste 29 (290° rechtweisend) · Gegenwind 13,10 kt, abgerundet 13 kt'), ac.id);
+    const m = /<div class="perf-ac-sub" id="perf-ac-sub">(.*?)<\/div>/.exec(html);
+    assert.equal(text(m[1]).trim(), sub, ac.id + ': Unterzeile');
+    // keine Kopfzeile mehr (Höchstgewicht in lb, Technik, Variante)
+    assert.ok(!html.includes('perf-head') && !has(html, 'Maximales Abfluggewicht') && !has(html, ' lb)') && !has(html, ac.variantDe), ac.id);
+    assert.ok(has(html, 'Eingaben: ' + mass + ' · Druckhöhe 2.974 ft = 907 m (QNH 1010,0, Platz 2.885 ft) · 5,6 °C · trocken'), ac.id + ': Eingaben');
+    assert.ok(has(html, 'AFM: ' + afm), ac.id + ': Bedingungen');
+    assert.equal(ac.techniqueDe, afm, ac.id + ': techniqueDe gekürzt');
+    assert.ok(has(html, 'Piste 29 (290°) · Gegenwind 13,10 kt → 13 kt'), ac.id);
   });
   // Piste 11 bei Wind aus 100°, 15 °C, QNH 1020: Handrechnung DR400 281/551 und 206/486, Eurostar 319/484 und 245/618
   const wx = wxEdsf({ windDir: 100, windKt: 8, tempC: 15, qnhHpa: 1020 });
@@ -256,77 +265,75 @@ test('Referenzfall: Zahlen aller Muster wie die Handrechnung, nur Piste 29, Kopf
   assert.ok(has(block(render(wx, { aircraft: ARCUS }), '11'), 'Start 321 m 572 m 760 m'));
 });
 
-test('Robin DR400: Rechenweg mit Standardtemperatur der Tabelle, Ecken «Std», Faktortabelle und Graszuschlag je Strecke', () => {
+test('Robin DR400: Rechenweg kurz – Std, Zellen ohne «Tabelle», Faktortabelle, Gras je Strecke, Lesehilfe mit Zusatz «Std»', () => {
   const d = text(details(render(wxEdsf(), { detailsOpen: true })));
   [
-    'Start · Flughandbuch, Abschnitt 5, Startleistungen, Seite 5.03 · Tabelle 1.100 kg',
-    'Standardtemperatur der Tabelle bei 2.974 ft: 5,4832 °C (linear zwischen 7 °C bei 2.500 ft und −1 °C bei 5.000 ft) · Abweichung 5,6 − 5,4832 = +0,1168 °C',
-    'Tabelle 2.500 ft / Std 250 m 490 m',
-    'Tabelle 2.500 ft / Std+20 °C 290 m 570 m',
-    'Tabelle 5.000 ft / Std 305 m 605 m',
-    'Tabelle 5.000 ft / Std+20 °C 355 m 705 m',
-    'interpoliert für 2.974 ft / Std+0,1168 °C ≈260,67 m ≈512,29 m',
-    'Gegenwind 13 kt: × 0,79 (Faktortabelle des AFM, zwischen 10 kt × 0,85 und 20 kt × 0,65 linear) ≈205,93 m ≈404,71 m',
-    'Gras +15 % je Strecke (× 1,15) 236,83 m 465,42 m',
+    'Start · AFM S. 5.03 · 1.100 kg',
+    'Std bei 2.974 ft: 5,4832 °C (7 bis −1 °C) · Abweichung +0,1168 °C',
+    ' 2.500 ft / Std 250 m 490 m',
+    '2.500 ft / Std+20 °C 290 m 570 m',
+    '5.000 ft / Std 305 m 605 m',
+    '5.000 ft / Std+20 °C 355 m 705 m',
+    'interpoliert ≈260,67 m ≈512,29 m',
+    'Gegenwind 13 kt × 0,79 (AFM, linear) ≈205,93 m ≈404,71 m',
+    'Gras × 1,15 236,83 m 465,42 m',
     'aufgerundet 237 m 466 m',
-    'Landung · Flughandbuch, Abschnitt 5, Landeleistungen, Seite 5.08 · Tabelle 1.100 kg',
-    'interpoliert für 2.974 ft / Std+0,1168 °C ≈188,02 m ≈444,21 m',
-    'Gras +15 % je Strecke (× 1,15) 170,83 m 403,57 m',
+    'Landung · AFM S. 5.08 · 1.100 kg',
+    'interpoliert ≈188,02 m ≈444,21 m',
+    'Gras × 1,15 170,83 m 403,57 m',
     'aufgerundet 171 m 404 m',
-    'Druckhöhe, Temperaturabweichung, Startgewicht und Landegewicht linear interpoliert.',
-    ui.TEXT.calcStd.replace(/&nbsp;/g, ' '), ui.TEXT.calcWindFactor, ui.TEXT.calcWindFull, ui.TEXT.calcSurfaceEach,
-    'Gewicht 1.100 kg (maximales Abfluggewicht) · Landung mit 1.100 kg (maximales Landegewicht)'
+    'Linear interpoliert; unter der Tabelle gilt der kleinste Wert, darüber gibt es keinen. Immer zur längeren Strecke gerundet. ' +
+      'Nicht berücksichtigt: Pistenneigung, Sicherheitszuschlag. Std = Standardtemperatur der AFM-Tabelle.'
   ].forEach((s) => assert.ok(d.includes(s), 'fehlt: ' + s + '\n' + d));
-  assert.ok(!d.includes(ui.TEXT.calcRoundM), 'keine Meterachse beim DR400');
-  // Gegenwind genau auf einem Stützpunkt (10 kt) und dazwischen mit drei Dezimalen (7 kt: 0,895)
+  assert.ok(!d.includes('Tabelle 2.500') && !d.includes('Flughandbuch') && !d.includes('Faktortabelle'), d);
+  // Gegenwind genau auf einem Stützpunkt (10 kt), dazwischen (7 kt: 0,895) und über dem letzten (35 kt)
   const at = (dir, kt) => text(details(render(wxEdsf({ windDir: dir, windKt: kt }), { detailsOpen: true })));
-  assert.ok(at(290, 10.4).includes('Gegenwind 10 kt: × 0,85 (Faktortabelle des AFM, Stützpunkt 10 kt × 0,85)'), at(290, 10.4));
-  assert.ok(at(290, 7.9).includes('Gegenwind 7 kt: × 0,895 (Faktortabelle des AFM, zwischen 0 kt × 1 und 10 kt × 0,85 linear)'));
-  assert.ok(at(290, 35).includes('Gegenwind 35 kt: × 0,55 (Faktortabelle des AFM, über dem letzten Stützpunkt 30 kt × 0,55)'), at(290, 35));
+  assert.ok(at(290, 10.4).includes('Gegenwind 10 kt × 0,85 (AFM)'), at(290, 10.4));
+  assert.ok(at(290, 7.9).includes('Gegenwind 7 kt × 0,895 (AFM, linear)'));
+  assert.ok(at(290, 35).includes('Gegenwind 35 kt × 0,55 (AFM, ab 30 kt)'), at(290, 35));
 });
 
-test('Super Dimona: Druckhöhe in m, Gegenwind in der Tabelle (acht Ecken), Graszuschlag «mindestens», Landung fehlt', () => {
+test('Super Dimona: m-Achse und Wind in der Tabelle (acht Zellen), Gras «mind.», Landung «kein AFM-Wert», Zusatz 15-kt-Wert', () => {
   const html = render(wxEdsf(), { aircraft: HK36R, detailsOpen: true });
   const d = text(details(html));
   [
-    'Start · Flughandbuch, 5.3.3 Starttabelle, Seite 5-7',
-    'Tabelle 800 m / 0 °C / 10 kt 113 m 190 m',
-    'Tabelle 800 m / 0 °C / 15 kt 88 m 156 m',
-    'Tabelle 1.200 m / 15 °C / 15 kt 116 m 205 m',
-    'interpoliert für 907 m / 5,6 °C / 13 kt ≈107,98 m ≈186,5 m',
-    'Gegenwind 13 kt: in der AFM-Tabelle abgelesen',
-    'Gras: mindestens +20 % von ≈107,98 m = ≈+21,6 m 129,58 m 208,1 m',
+    'Start · AFM S. 5-7',
+    '800 m / 0 °C / 10 kt 113 m 190 m',
+    '800 m / 0 °C / 15 kt 88 m 156 m',
+    '1.200 m / 15 °C / 15 kt 116 m 205 m',
+    'interpoliert ≈107,98 m ≈186,5 m',
+    'Gegenwind 13 kt: in der AFM-Tabelle',
+    'Gras mind. +20 % der Rollstrecke (≈+21,6 m) 129,58 m 208,1 m',
     'aufgerundet 130 m 209 m',
-    'Landung Das AFM nennt keine Landestrecke.',
-    'Druckhöhe, Temperatur und Gegenwind linear interpoliert.',
-    ui.TEXT.calcWindTable, ui.TEXT.calcRoundM, ui.TEXT.calcWindFull, ui.TEXT.calcSurface,
-    'Gewicht 770 kg (einzige Starttabelle) · Druckhöhe 2.974 ft = 907 m'
+    'Landung kein AFM-Wert',
+    'Über 15 kt Gegenwind gilt der 15-kt-Wert.'
   ].forEach((s) => assert.ok(d.includes(s), 'fehlt: ' + s + '\n' + d));
-  assert.equal((details(html).match(/<tr><th scope="row">Tabelle /g) || []).length, 8, 'acht Tabellenzellen');
-  assert.ok(!d.includes('Faktortabelle') && !d.includes('nicht angerechnet'));
+  assert.equal((details(html).match(/<tr><th scope="row">[\d.]+&nbsp;m \/ /g) || []).length, 8, 'acht Tabellenzellen');
+  assert.ok(!d.includes('Faktortabelle') && !d.includes('nicht angerechnet') && !d.includes('Std ='));
   // über dem grössten Tabellenwind: dessen Wert, mit Hinweis
   const d2 = text(details(render(wxEdsf({ windDir: 290, windKt: 18 }), { aircraft: HK36R, detailsOpen: true })));
-  assert.ok(d2.includes('Gegenwind 18 kt: in der AFM-Tabelle abgelesen (über dem grössten Tabellenwind gilt dessen Wert)'), d2);
+  assert.ok(d2.includes('Gegenwind 18 kt: in der AFM-Tabelle (Wert für 15 kt)'), d2);
   assert.ok(d2.includes('/ 15 kt'), d2);
 });
 
-test('Zuschlag «mindestens» ohne Aufklappen sichtbar: Satz am Pistenblock in der Hinweisfarbe, nicht in der Kurzzeile', () => {
-  const NOTE = '<div class="perf-finding perf-min">Start: Graszuschlag laut AFM mindestens +20&nbsp;% der Rollstrecke – die Strecke kann länger sein.</div>';
+test('Zuschlag «mindestens» ohne Aufklappen sichtbar: «Start: Gras mind. +20 % – kann länger sein.», nicht in der Kurzzeile', () => {
+  const NOTE = '<div class="perf-finding perf-min">Start: Gras mind. +20&nbsp;% – kann länger sein.</div>';
   let p = parts(wxEdsf(), { aircraft: HK36R });
   const b = block(p.body, '29');
   assert.ok(b.includes(NOTE), b);
   assert.ok(p.body.indexOf(NOTE) < p.body.indexOf('<details'), 'vor dem Rechenweg');
-  assert.ok(!has(p.teaser, 'mindestens') && !p.teaser.includes('perf-min'), 'nicht in der Kurzzeile');
+  assert.ok(!has(p.teaser, 'mind') && !p.teaser.includes('perf-min'), 'nicht in der Kurzzeile');
   // windstill: an beiden Pistenblöcken
   p = parts(wxEdsf({ windKt: 0.6 }), { aircraft: HK36R });
   assert.ok(block(p.body, '11').includes(NOTE) && block(p.body, '29').includes(NOTE));
   // Zuschläge ohne «mindestens» (DR400 je Strecke, Arcus aus der Rollstrecke): kein Satz
   [DR400, ARCUS, EV97].forEach((ac) => assert.ok(!parts(wxEdsf(), { aircraft: ac }).body.includes('perf-min'), ac.id));
-  // Zuschlag je Strecke mit «mindestens»: ohne «der Rollstrecke»
+  // Zuschlag je Strecke mit «mindestens»: gleicher kurzer Satz
   const dr = clone(DR400);
   dr.charts.takeoff.corrections.forEach((c) => { if (c.kind === 'surface') c.minimum = true; });
-  assert.ok(block(parts(wxEdsf(), { aircraft: dr }).body, '29').includes(
-    '<div class="perf-finding perf-min">Start: Graszuschlag laut AFM mindestens +15&nbsp;% – die Strecke kann länger sein.</div>'));
+  const pd = parts(wxEdsf(), { aircraft: dr, detailsOpen: true });
+  assert.ok(block(pd.body, '29').includes('<div class="perf-finding perf-min">Start: Gras mind. +15&nbsp;% – kann länger sein.</div>'));
+  assert.ok(has(pd.body, 'Gras mind. × 1,15'), text(details(pd.body)));
   // kein Wert (Gegenwind über 40 kt): kein Satz
   assert.ok(!parts(wxEdsf({ windDir: 290, windKt: 45 }), { aircraft: HK36R }).body.includes('perf-min'));
   assert.ok(ui.CSS.includes('.perf-min { color: #fcd34d; }'));
@@ -336,35 +343,36 @@ test('Eurostar: Faustregel deutlich – Kasten ohne Aufklappen, markierte Zeilen
   const p = parts(wxEdsf(), { aircraft: EV97, detailsOpen: true });
   const box = /<div class="perf-cond perf-rule" role="note">(.*?)<\/div>/.exec(p.body);
   assert.ok(box, p.body);
-  assert.equal(text(box[1]).trim(), 'Faustregel UK CAA, nicht aus dem AFM: Das AFM nennt nur Werte für Meereshöhe und 15 °C. Druckhöhe und Temperatur ' +
-    'sind mit einer allgemeinen Faustregel eingerechnet: Start +10 % je 1000 ft Druckhöhe und +10 % je 10 °C über der Standardtemperatur; ' +
-    'Landung +5 % je 1000 ft Druckhöhe und +5 % je 10 °C über der Standardtemperatur.');
+  assert.equal(text(box[1]).trim(), 'Faustregel UK CAA, nicht aus dem AFM: AFM-Werte nur für Meereshöhe und 15 °C. ' +
+    'Zuschlag Start +10 %, Landung +5 % je 1000 ft und je 10 °C über Standard.');
   assert.ok(box[1].startsWith('<b>Faustregel UK CAA, nicht aus dem AFM:</b>'));
   assert.ok(p.body.indexOf('perf-rule') < p.body.indexOf('perf-grid'), 'Kasten vor den Pistenblöcken');
   assert.ok(p.body.indexOf('perf-rule') < p.body.indexOf('<details'), 'Kasten ausserhalb des Rechenwegs');
   const d = details(p.body);
-  assert.equal((d.match(/<tr class="perf-steps-rule-h"><td class="perf-steps-note" colspan="3">Faustregel UK CAA, nicht aus dem AFM · UK CAA Safety Sense Leaflet 7, nicht aus dem Handbuch<\/td><\/tr>/g) || []).length, 2);
+  // Kopf der Regelzeilen ohne Doppelung der Quelle
+  assert.equal((d.match(/<tr class="perf-steps-rule-h"><td class="perf-steps-note" colspan="3">Faustregel UK CAA \(nicht AFM\)<\/td><\/tr>/g) || []).length, 2);
+  assert.ok(!d.includes('Safety Sense Leaflet'), 'keine Doppelung «UK CAA Safety Sense Leaflet 7, nicht aus dem Handbuch»');
   assert.equal((d.match(/<tr class="perf-steps-rule">/g) || []).length, 4, 'je Phase zwei Regelzeilen');
   [
-    'AFM-Wert für 0 ft / 15 °C 238 m 361 m',
-    'Faustregel Druckhöhe: +10 % je 1000 ft: 2.974 ft → × 1,2974 308,7812 m 468,3614 m',
-    'Faustregel Temperatur: +10 % je 10 °C über der Standardtemperatur: 5,6 °C, Standardtemperatur ≈9,11 °C, darüber 0 °C → × 1 308,79 m 468,37 m',
-    'Gegenwind 13 kt: nicht angerechnet (das AFM nennt keine Windkorrektur)',
+    'AFM 0 ft / 15 °C 238 m 361 m',
+    'Druckhöhe 2.974 ft: × 1,2974 308,7812 m 468,3614 m',
+    'Temperatur 5,6 °C, Std ≈9,11 °C: × 1 308,79 m 468,37 m',
+    'Gegenwind: nicht angerechnet (kein AFM-Wert)',
     'aufgerundet 309 m 469 m',
-    'AFM-Wert für 0 ft / 15 °C 210 m 530 m',
-    'Faustregel Druckhöhe: +5 % je 1000 ft: 2.974 ft → × 1,1487 241,227 m 608,811 m',
+    'AFM 0 ft / 15 °C 210 m 530 m',
+    'Druckhöhe 2.974 ft: × 1,1487 241,227 m 608,811 m',
     'aufgerundet 242 m 609 m',
-    ui.TEXT.calcRule.replace(/&nbsp;/g, ' '), ui.TEXT.calcWindNone
+    'Immer zur längeren Strecke gerundet. Nicht berücksichtigt: Pistenneigung, Sicherheitszuschlag. Höhe und Temperatur nach Faustregel UK CAA.'
   ].forEach((s) => assert.ok(text(d).includes(s), 'fehlt: ' + s + '\n' + text(d)));
+  assert.ok(!text(d).includes('Linear interpoliert'), 'keine Tabellenachsen: ohne Satz zur Interpolation');
   // Kurzzeile: Kopf, Element «Faustregel» (title und Screenreader: «Faustregel UK CAA, nicht aus dem AFM»), Zeile wie bei den
-  // anderen Mustern
+  // anderen Mustern (unverändert)
   assert.equal(p.teaser, '<span class="perf-t-head">Eurostar SLW-Sport · Piste&nbsp;29</span>' +
     '<span class="perf-t-tag perf-t-rule" title="Faustregel UK CAA, nicht aus dem AFM">Faustregel<span class="perf-sr"> UK CAA, nicht aus dem AFM</span></span>' +
     '<span class="perf-t-row">Rollstrecke: <span class="perf-nw">Start <b>309&nbsp;m</b></span> · <span class="perf-nw">Landung <b>242&nbsp;m</b></span></span>');
-  assert.ok(!p.teaser.includes('(Faustregel)'));
-  // Temperatur über der Standardtemperatur: Faktor angenähert mit «≈», Werte wie die Handrechnung (22,3 °C: 402/610 nass)
+  // Temperatur über der Standardtemperatur: Faktor angenähert mit «≈»
   const w = text(details(render(wxEdsf({ tempC: 15 }), { aircraft: EV97, detailsOpen: true })));
-  assert.ok(w.includes('15,0 °C, Standardtemperatur ≈9,11 °C, darüber ≈5,89 °C → × ≈1,0589'), w);
+  assert.ok(w.includes('Temperatur 15,0 °C, Std ≈9,11 °C: × ≈1,0589'), w);
   // Andere Muster ohne Faustregel
   [DR400, HK36R, ARCUS].forEach((ac) => {
     const q = parts(wxEdsf(), { aircraft: ac, detailsOpen: true });
@@ -372,32 +380,33 @@ test('Eurostar: Faustregel deutlich – Kasten ohne Aufklappen, markierte Zeilen
   });
 });
 
-test('Arcus M: keine Windkorrektur im AFM – «ohne Gutschrift», Lesehilfe ohne «voll angerechnet»; Landung fehlt', () => {
+test('Arcus M: keine Windkorrektur im AFM – «(nicht angerechnet)»; Gras aus der Rollstrecke; Landung «kein AFM-Wert»', () => {
   const html = render(wxEdsf(), { aircraft: ARCUS, detailsOpen: true });
-  assert.ok(has(block(html, '29'), 'Piste 29 · Gegenwind 13 kt, ohne Gutschrift'), text(block(html, '29')));
+  assert.ok(has(block(html, '29'), 'Piste 29 · Gegenwind 13 kt (nicht angerechnet)'), text(block(html, '29')));
   const d = text(details(html));
   [
-    'Start · Flughandbuch, 5.2.3 Startstrecken, Seite 5.2.3',
-    'Tabelle 500 m / 0 °C 225 m 435 m',
-    'Tabelle 1.000 m / 15 °C 275 m 533 m',
-    'interpoliert für 907 m / 5,6 °C ≈252,34 m ≈488,49 m',
-    'Gegenwind 13 kt: nicht angerechnet (das AFM nennt keine Windkorrektur)',
-    'Gras +20 % von ≈252,34 m = ≈+50,47 m 302,81 m 538,97 m',
+    'Start · AFM S. 5.2.3',
+    '500 m / 0 °C 225 m 435 m',
+    '1.000 m / 15 °C 275 m 533 m',
+    'interpoliert ≈252,34 m ≈488,49 m',
+    'Gegenwind: nicht angerechnet (kein AFM-Wert)',
+    'Gras +20 % der Rollstrecke (≈+50,47 m) 302,81 m 538,97 m',
     'aufgerundet 303 m 539 m',
-    'Landung Das AFM nennt keine Landestrecke.',
-    ui.TEXT.calcWindNone
+    'Landung kein AFM-Wert',
+    'Nicht berücksichtigt: Pistenneigung, Sicherheitszuschlag.'
   ].forEach((s) => assert.ok(d.includes(s), 'fehlt: ' + s + '\n' + d));
-  assert.ok(!d.includes(ui.TEXT.calcWindFull));
-  // Muster mit Windkorrektur: Titel ohne «ohne Gutschrift»
+  // Lesehilfe ohne Zusatz (kein «Std», kein Tabellenwind, keine Faustregel)
+  assert.ok(d.trim().endsWith('Nicht berücksichtigt: Pistenneigung, Sicherheitszuschlag.'), d.slice(-200));
+  // Muster mit Windkorrektur: Titel ohne «(nicht angerechnet)»
   [DR400, HK36R].forEach((ac) => assert.ok(has(block(render(wxEdsf(), { aircraft: ac }), '29'), 'Piste 29 · Gegenwind 13 kt Rollstrecke'), ac.id));
 });
 
-test('Landung fehlt im AFM: Zeile «–», gedämpfter Satz statt Rechenfehler, Kurzzeile «Landung –» mit Erklärung', () => {
+test('Landung fehlt im AFM: Zeile «–», «Landung: kein AFM-Wert.» gedämpft statt Rechenfehler, Kurzzeile «Landung –» unverändert', () => {
   [HK36R, ARCUS].forEach((ac) => {
     const p = parts(wxEdsf(), { aircraft: ac, detailsOpen: true });
     const b = block(p.body, '29');
     assert.ok(b.includes('<tr><th scope="row">Landung</th><td>–</td><td>–</td><td>760&nbsp;m</td></tr>'), b);
-    assert.ok(b.includes('<div class="perf-finding perf-absent">Landung: Das AFM nennt keine Landestrecke.</div>'), b);
+    assert.ok(b.includes('<div class="perf-finding perf-absent">Landung: kein AFM-Wert.</div>'), b);
     assert.ok(!b.includes('perf-nov') && !has(b, 'Rechenfehler'), ac.id);
     assert.ok(p.teaser.includes('<span class="perf-nw" title="Das AFM nennt keine Landestrecke">Landung –<span class="perf-sr"> (Das AFM nennt keine Landestrecke)</span></span>'), p.teaser);
     assert.ok(!has(p.teaser, 'kein Wert'));
@@ -411,18 +420,19 @@ test('Landung fehlt im AFM: Zeile «–», gedämpfter Satz statt Rechenfehler, 
 
 /* ── Gewicht ───────────────────────────────────────────────── */
 
-test('Gewichtsfeld nur beim DR400 (Tabellen 1.100 und 1.000 kg), Landung mit demselben Gewicht; sonst der Satz zur einen Tabelle', () => {
+test('Gewichtsfeld nur beim DR400: «Zwischen 1.000 und 1.100 kg interpoliert (darunter 1.000 kg), Landung mit gleichem Gewicht.»', () => {
   let html = render(wxEdsf());
   const hint = /<div class="perf-mass-hint" id="perf-mass-hint">(.*?)<\/div>/.exec(html);
   assert.ok(hint, html);
-  assert.equal(text(hint[1]), 'höchstens 1.100 kg · zwischen den AFM-Tabellen für 1.100 und 1.000 kg interpoliert, darunter gilt die Tabelle für 1.000 kg · ' +
-    'Landung mit demselben Gewicht gerechnet (AFM-Landetabellen 1.100 und 1.000 kg)');
+  assert.equal(text(hint[1]), 'Zwischen 1.000 und 1.100 kg interpoliert (darunter 1.000 kg), Landung mit gleichem Gewicht.');
   assert.ok(html.includes('<input id="perf-mass-in"'));
+  // Muster mit einer Tabelle: kein Feld und kein Satz (das Gewicht steht im Rechenweg unter «Eingaben»)
   [[HK36R, 770], [EV97, 600], [ARCUS, 800]].forEach(([ac, kg]) => {
-    html = render(wxEdsf(), { aircraft: ac });
-    assert.ok(!html.includes('<input') && html.includes('<div class="perf-mass-one">Abfluggewicht: ' + kg + '&nbsp;kg – das AFM hat nur diese Starttabelle.</div>'), ac.id);
+    html = render(wxEdsf(), { aircraft: ac, detailsOpen: true });
+    assert.ok(!html.includes('<input') && !html.includes('perf-mass-one') && !has(html, 'das AFM hat nur diese Starttabelle'), ac.id);
+    assert.ok(has(html, 'Eingaben: ' + ui.fmtInt(kg) + ' kg (einzige AFM-Tabelle)'), ac.id);
     // eine Eingabe gilt bei einer Tabelle nicht
-    assert.ok(has(render(wxEdsf(), { aircraft: ac, massText: '500' }), 'Maximales Abfluggewicht'), ac.id);
+    assert.equal(text(render(wxEdsf(), { aircraft: ac, massText: '500' })), text(render(wxEdsf(), { aircraft: ac })), ac.id);
   });
 });
 
@@ -436,42 +446,45 @@ test('parseMass und massIncomplete: Tausenderpunkt («1.050») und Apostroph gel
   });
   // Fehlertexte mit geschütztem Leerzeichen vor «kg» (kein Umbruch zwischen Zahl und Einheit)
   const err = (t) => ui.parseMass(t, DR400).error.replace(/ /g, ' ');
-  assert.equal(err('1.101'), '1.101 kg liegt über dem maximalen Abfluggewicht von 1.100 kg – keine Berechnung.');
-  assert.equal(err('549'), '549 kg ist unplausibel tief (unter 550 kg) – keine Berechnung.');
+  assert.equal(err('1.101'), '1.101 kg: über dem Höchstgewicht von 1.100 kg – keine Berechnung.');
+  assert.equal(err('549'), '549 kg: unplausibel tief (unter 550 kg) – keine Berechnung.');
   assert.ok(ui.parseMass('1.101', DR400).error.includes('1.101 kg'));
   assert.equal(ui.parseMass('', DR400).error, ui.TEXT.massEmpty);
+  assert.equal(ui.TEXT.massEmpty, 'Bitte Gewicht in kg eingeben.');
+  assert.equal(ui.TEXT.massNotInt, 'Bitte ganze kg eingeben, z. B. 1050.');
   // noch am Tippen: leer, Ziffern unter der Untergrenze, angefangener Tausenderpunkt
   ['', '1', '11', '115', '1.', '1.0', '1.05', "1'"].forEach((t) => assert.equal(ui.massIncomplete(t, DR400), true, t));
   ['1.050', '1050', '1.0500', '1,0', 'x', '1101', '1.101'].forEach((t) => assert.equal(ui.massIncomplete(t, DR400), false, t));
 });
 
-test('DR400 mit 1.050 kg: Start und Landung zwischen den Tabellen interpoliert (Kopf, Eingaben, Rechenweg, Kurzzeile)', () => {
+test('DR400 mit 1.050 kg: Start und Landung zwischen den Tabellen interpoliert (Eingaben, Rechenweg, Kurzzeile)', () => {
   const p = parts(wxEdsf(), { massText: '1050', detailsOpen: true });
-  assert.ok(has(p.body, 'Abfluggewicht 1.050 kg: Start zwischen den AFM-Tabellen für 1.100 und 1.000 kg interpoliert, Landung mit demselben Gewicht ' +
-    'zwischen den AFM-Landetabellen für 1.100 und 1.000 kg interpoliert'), text(p.body));
   // Handrechnung: 209/417 und 164/389
   assert.ok(has(block(p.body, '29'), 'Start 209 m 417 m 760 m Landung 164 m 389 m 760 m'), text(block(p.body, '29')));
+  assert.ok(!has(p.body, 'Abfluggewicht 1.050 kg:'), 'keine Kopfzeile mehr');
   const d = text(details(p.body));
   [
-    'Gewicht 1.050 kg, zwischen den Starttabellen 1.100 und 1.000 kg interpoliert · Landung mit 1.050 kg, zwischen den Landetabellen 1.100 und 1.000 kg interpoliert',
-    'Start · Flughandbuch, Abschnitt 5, Startleistungen, Seite 5.03 · Tabellen 1.100 und 1.000 kg',
-    'Landung · Flughandbuch, Abschnitt 5, Landeleistungen, Seite 5.08 · Tabellen 1.100 und 1.000 kg',
-    'Tabelle 1.000 kg · 2.500 ft / Std 190 m 370 m',
-    '1.000 kg · interpoliert für 2.974 ft / Std+0,1168 °C ≈198,72 m ≈405,47 m',
+    'Eingaben: 1.050 kg, Landung 1.050 kg · Druckhöhe 2.974 ft',
+    'Start · AFM S. 5.03 · 1.100 und 1.000 kg',
+    'Landung · AFM S. 5.08 · 1.100 und 1.000 kg',
+    '1.100 kg · 2.500 ft / Std 250 m 490 m',
+    '1.100 kg · interpoliert ≈260,67 m ≈512,29 m',
+    '1.000 kg · 2.500 ft / Std 190 m 370 m',
+    '1.000 kg · interpoliert ≈198,72 m ≈405,47 m',
     'interpoliert für 1.050 kg ≈229,7 m ≈458,88 m',
-    'Tabelle 1.000 kg · 2.500 ft / Std 170 m 405 m',
+    '1.000 kg · 2.500 ft / Std 170 m 405 m',
     'interpoliert für 1.050 kg ≈180,05 m ≈427,17 m'
   ].forEach((s) => assert.ok(d.includes(s), 'fehlt: ' + s + '\n' + d));
   assert.equal(text(p.teaser).trim(), 'Robin DR400/200R · 1.050 kg · Piste 29 Rollstrecke: Start 209 m · Landung 164 m');
   // unter der leichtesten Tabelle: deren Werte (Handrechnung 900 kg: 181/369 und 157/373)
   const q = parts(wxEdsf(), { massText: '900', detailsOpen: true });
-  assert.ok(has(q.body, 'Abfluggewicht 900 kg: Start nach der kleinsten AFM-Tabelle (1.000 kg), Landung mit demselben Gewicht nach der kleinsten AFM-Landetabelle (1.000 kg)'), text(q.body));
   assert.ok(has(block(q.body, '29'), 'Start 181 m 369 m 760 m Landung 157 m 373 m 760 m'), text(block(q.body, '29')));
-  assert.ok(text(details(q.body)).includes('Gewicht 900 kg, Starttabelle 1.000 kg · Landung mit 900 kg, kleinste Landetabelle 1.000 kg'), text(details(q.body)));
+  assert.ok(text(details(q.body)).includes('Eingaben: 900 kg (Tabelle 1.000 kg), Landung 900 kg (Tabelle 1.000 kg)'), text(details(q.body)));
+  assert.ok(text(details(q.body)).includes('Start · AFM S. 5.03 · 1.000 kg'));
   // genau eine Tabelle (1.000 kg)
   const r = parts(wxEdsf(), { massText: '1.000', detailsOpen: true });
-  assert.ok(has(r.body, 'Start nach der AFM-Tabelle für 1.000 kg, Landung mit demselben Gewicht nach der AFM-Landetabelle für 1.000 kg'), text(r.body));
-  assert.ok(text(details(r.body)).includes('Landung · Flughandbuch, Abschnitt 5, Landeleistungen, Seite 5.08 · Tabelle 1.000 kg'));
+  assert.ok(text(details(r.body)).includes('Eingaben: 1.000 kg, Landung 1.000 kg'));
+  assert.ok(text(details(r.body)).includes('Landung · AFM S. 5.08 · 1.000 kg'));
   // ungültig: keine Zahlen
   const e = parts(wxEdsf(), { massText: '1.05' });
   assert.equal(e.kind, 'mass-error');
@@ -480,43 +493,55 @@ test('DR400 mit 1.050 kg: Start und Landung zwischen den Tabellen interpoliert (
 
 /* ── Fehler und Pistenwahl ─────────────────────────────────── */
 
-test('Fehlertexte: Temperatur über Std + 20 °C (DR400) bzw. über 30 °C, unplausible Messwerte', () => {
+test('Fehlertexte kurz: Temperatur über Std + 20 °C (DR400) bzw. über 30 °C, unplausible Messwerte', () => {
   let html = render(wxEdsf({ tempC: 31 }));
-  assert.ok(has(html, 'Temperatur 31,0 °C liegt über dem Tabellenbereich des AFM (bis Standardtemperatur +20 °C, hier 25,4 °C) – kein Wert.'), text(html));
+  assert.ok(has(html, 'Temperatur 31,0 °C über dem AFM-Bereich (bis 25,4 °C = Std +20 °C) – kein Wert.'), text(html));
   assertNoResult(html, 'DR400 31 °C');
   assert.equal(render(wxEdsf({ tempC: 25.4 })).includes('perf-grid'), true, '25,4 °C rechnet noch');
   [HK36R, ARCUS].forEach((ac) => {
     html = render(wxEdsf({ tempC: 31 }), { aircraft: ac });
-    assert.ok(has(html, 'Temperatur 31,0 °C liegt über dem Tabellenbereich des AFM (bis 30 °C) – kein Wert.'), ac.id + ': ' + text(html));
+    assert.ok(has(html, 'Temperatur 31,0 °C über dem AFM-Bereich (bis 30 °C) – kein Wert.'), ac.id + ': ' + text(html));
   });
   assert.ok(render(wxEdsf({ tempC: 39.9 }), { aircraft: EV97 }).includes('perf-grid'), 'Faustregel ohne Temperaturgrenze');
   html = render(wxEdsf({ qnhHpa: 850 }));
   assert.ok(has(html, 'Messwert unplausibel (QNH 850,0 hPa) – keine Berechnung.'), text(html));
   html = render(wxEdsf({ windDir: 400 }));
   assert.ok(has(html, 'Messwert unplausibel (Windrichtung 400°) – keine Berechnung.'), text(html));
+  // über 40 kt Gegenwind: kein Wert, kurzer Satz mit der Grenze des Rechners (nicht «AFM-Bereich»),
+  // Blockkopf ohne «(nicht angerechnet)», weil es gar keinen Wert gibt
+  html = render(wxEdsf({ windDir: 290, windKt: 45 }));
+  assert.ok(has(block(html, '29'), 'Gegenwind 45 kt: über 40 kt – kein Wert.'), text(html));
+  assert.ok(!has(block(html, '29'), 'AFM-Bereich'), text(html));
+  assert.ok(!has(block(html, '29'), 'nicht angerechnet'), text(html));
+  // Arcus M ohne Windregel, 20 kt: Wert vorhanden, Gegenwind «(nicht angerechnet)» bleibt
+  html = render(wxEdsf({ windDir: 290, windKt: 20 }), { aircraft: ARCUS });
+  assert.ok(has(block(html, '29'), 'Gegenwind 20 kt (nicht angerechnet)'), text(html));
 });
 
 test('Pistenwahl: windstill, ohne Richtung, quer – beide Pisten ohne Windkorrektur; Richtung fehlt bei starkem Wind', () => {
   // windstill: Handrechnung DR400 300/590 und 217/511 auf beiden Pisten
   let html = render(wxEdsf({ windKt: 0.6 }), { detailsOpen: true });
-  assert.ok(has(html, ui.TEXT.calm));
+  assert.ok(has(html, 'Windstill (unter 1 kt): beide Pisten ohne Wind gerechnet, mit Rückenwind länger.'));
   ['11', '29'].forEach((id) => assert.ok(has(block(html, id), 'Start 300 m 590 m 760 m Landung 217 m 511 m 760 m'), id));
-  assert.ok(has(html, 'Pisten 11 und 29 · windstill, ohne Windkorrektur'), 'eine Tabelle für beide Pisten');
-  html = render(wxEdsf({ windDir: null, windKt: 2.5 }));
-  assert.ok(has(html, ui.TEXT.nodir) && block(html, '11') && block(html, '29'));
-  html = render(wxEdsf({ windDir: 200, windKt: 12 }));
-  assert.ok(has(html, ui.TEXT.cross) && block(html, '11') && block(html, '29'));
+  ['11', '29'].forEach((id) => assert.ok(has(block(html, id), 'Piste ' + id + ' · ohne Windkorrektur'), id));
+  assert.ok(has(html, 'Pisten 11 und 29 · windstill'), 'eine Tabelle für beide Pisten');
+  html = render(wxEdsf({ windDir: null, windKt: 2.5 }), { detailsOpen: true });
+  assert.ok(has(html, 'Ohne Windrichtung: beide Pisten ohne Wind gerechnet, mit Rückenwind länger.') && block(html, '11') && block(html, '29'));
+  assert.ok(has(html, 'Pisten 11 und 29 · ohne Windrichtung'));
+  html = render(wxEdsf({ windDir: 200, windKt: 12 }), { detailsOpen: true });
+  assert.ok(has(html, 'Wind quer: beide Pisten ohne Wind gerechnet, mit Rückenwind länger.') && block(html, '11') && block(html, '29'));
+  assert.ok(has(html, 'Pisten 11 und 29 · Wind quer'));
   html = render(wxEdsf({ windDir: null, windKt: 6 }));
-  assert.ok(has(html, ui.TEXT.noDirection));
+  assert.ok(has(html, 'Windrichtung fehlt (über 3 kt) – keine Berechnung.'));
   assertNoResult(html, 'Richtung fehlt');
 });
 
-test('Zustände ohne Wert: Laden, Datenfehler (Schema 3 nur mit gültigen Daten), alte Messwerte; Text, Kopf, Pflichthinweis', () => {
+test('Zustände ohne Wert: Laden, Datenfehler (Schema 3 nur mit gültigen Daten), alte Messwerte; Text, Unterzeile, Pflichthinweis', () => {
   let html = render(wxEdsf(), { dataState: 'loading', aircraft: null, selectedId: 'ev97' });
-  assert.ok(has(html, ui.TEXT.loading) && has(html, 'D-MZWH'));
+  assert.ok(has(html, ui.TEXT.loading) && has(html, 'D-MZWH') && !has(html, 'max.'), text(html));
   assertNoResult(html, 'Laden');
   html = render(wxEdsf(), { dataState: 'error', aircraft: null });
-  assert.ok(has(html, ui.TEXT.dataError));
+  assert.ok(has(html, 'Flugzeug- oder Platzdaten fehlen – keine Berechnung.'));
   // kaputte Schema-3-Daten (Faustregel ohne Temperaturregel): Datenfehler statt Zahlen
   const bad = clone(EV97);
   bad.charts.takeoff.corrections = bad.charts.takeoff.corrections.filter((c) => c.kind !== 'temperatureRule');
@@ -528,9 +553,11 @@ test('Zustände ohne Wert: Laden, Datenfehler (Schema 3 nur mit gültigen Daten)
   bad2.charts.takeoff = { absent: true, reasonDe: 'x' };
   assert.ok(has(render(wxEdsf(), { aircraft: bad2 }), ui.TEXT.dataError));
   html = render(wxEdsf({ time: NOW - 50 * MIN }));
-  assert.ok(has(html, 'Messwerte veraltet (Stand 10:55 Uhr, vor 50 min) – keine Berechnung.'), text(html));
-  assert.ok(has(html, 'Maximales Abfluggewicht 1.100 kg'));
+  assert.ok(has(html, 'Messwerte veraltet (10:55, vor 50 min) – keine Berechnung.'), text(html));
+  assert.ok(has(html, 'D-ESIA · max. 1.100 kg'));
   assertNoResult(html, 'veraltet');
+  html = render(wxEdsf({ time: NOW + 10 * MIN }));
+  assert.ok(has(html, 'Messzeit in der Zukunft (11:55) – keine Berechnung.'), text(html));
 });
 
 /* ── Formate, Version, Code ────────────────────────────────── */
@@ -551,8 +578,8 @@ test('Formate wie die EDSF-Seite: Tausenderpunkt, Dezimalkomma, echtes Minus; Fa
   assert.ok(has(render(wxEdsf()), 'QNH 1010,0 hPa'));
 });
 
-test('Version: perf.js, perf-ui.js und index.html stimmen überein (VERSION 8); Kern als PerfCore', () => {
-  assert.equal(ui.VERSION, 8);
+test('Version: perf.js, perf-ui.js und index.html stimmen überein (VERSION 9); Kern als PerfCore', () => {
+  assert.equal(ui.VERSION, 9);
   assert.equal(core.VERSION, ui.VERSION);
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const m1 = html.match(/<script defer src="perf\/perf\.js\?v=(\d+)"><\/script>/);
@@ -851,6 +878,6 @@ test('boot: Gewichtsfeld beim DR400 – Tippen rechnet nach 700 ms, «1.050» gi
   choose(env, 'arcusm');
   await settle();
   assert.equal(env.mass.querySelector('input'), null);
-  assert.ok(shown(env).includes('Abfluggewicht: 800 kg – das AFM hat nur diese Starttabelle.'));
+  assert.ok(shown(env).includes('D-KHSM · D-KXHW · max. 800 kg') && !shown(env).includes('Abfluggewicht'), shown(env));
   assert.equal(teaserText(env), 'Arcus M · Piste 29 Rollstrecke: Start 303 m · Landung –');
 });

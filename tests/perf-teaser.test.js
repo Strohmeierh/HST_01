@@ -99,7 +99,7 @@ test('Farben nach dem schlimmsten Fall der Karte: rot (Rollstrecke), amber (übe
   p = parts(wxEdsf(), { airfield: airfield(200) });
   assert.ok(p.teaser.includes('<b class="perf-red">237&nbsp;m</b><span class="perf-sr"> (' + SR_RED + ')</span>'), p.teaser);
   assert.ok(p.teaser.includes('<b class="perf-amber">171&nbsp;m</b><span class="perf-sr"> (' + SR_AMBER + ')</span>'), p.teaser);
-  assert.ok(p.body.includes('<span class="perf-red">237&nbsp;m</span>') && p.body.includes('Start: Rollstrecke länger als die verfügbare Länge.'));
+  assert.ok(p.body.includes('<span class="perf-red">237&nbsp;m</span>') && p.body.includes('Start: Rollstrecke länger als verfügbar.'));
   // Landung fehlt: ohne Farbe, nie rot
   p = parts(wxEdsf(), { aircraft: HK36R, airfield: airfield(200) });
   assert.ok(p.teaser.includes('<b class="perf-amber">130&nbsp;m</b>') && p.teaser.includes('Landung –'), p.teaser);
@@ -218,7 +218,7 @@ test('Mehrere Pisten, eine ohne Wert: «kein Wert» statt Zahl (jede Piste muss 
   af.runways[0].surface = 'beton';
   let p = parts(wxEdsf({ windKt: 0.6 }), { airfield: af });
   assert.equal(p.kind, 'result');
-  assert.ok(text(block(p.body, '11')).includes('Start: keine Korrektur für den Pistenbelag in den Flugzeugdaten. Kein Wert.'), text(p.body));
+  assert.ok(text(block(p.body, '11')).includes('Start: keine Belagskorrektur in den Daten – kein Wert.'), text(p.body));
   assert.ok(text(block(p.body, '29')).includes('Start 300 m 590 m 760 m'));
   assert.equal(items(p.teaser)[1][1], 'Rollstrecke: Start kein Wert · Landung kein Wert');
   // Landung nur auf einer Piste «nicht im AFM» (künstlich, über die Rechnung gestellt): «kein Wert», nicht «–»

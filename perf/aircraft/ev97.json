@@ -5,7 +5,7 @@
   "mass": { "kg": 600, "lb": 1323 },
   "massNoteDe": "Maximales Abfluggewicht 600 kg (Flug- und Betriebshandbuch, Kapitel 2 und 6); die Leistungsdaten gelten für 600 kg. Das Handbuch nennt nur kg; die Pfund sind umgerechnet.",
   "variantDe": "EV-97 Eurostar SLW-Sport (Ultraleichtflugzeug), Rotax 912 ULS (100 PS), 3-Blatt-Festpropeller Neuform",
-  "techniqueDe": "Start mit Klappenstellung 1, Landung mit Klappe 2 (Landestellung).",
+  "techniqueDe": "Start Klappen 1, Landung Klappen 2, Gras",
   "readingRuleDe": "Das Handbuch nennt nur Werte für Meereshöhe, Normaldruck, 15 °C und Windstille. Für Druckhöhe und Temperatur ist eine allgemeine Faustregel eingerechnet (UK CAA Safety Sense Leaflet 7), nicht aus dem Handbuch: Start +10 % je 1000 ft Druckhöhe und +10 % je 10 °C über der Standardtemperatur auf dieser Druckhöhe, Landung je +5 %. Unter Meereshöhe und unter der Standardtemperatur gibt es keine Gutschrift.",
   "footerDe": "Kein AFM-Wert für die Platzhöhe: Ausgangspunkt sind die Handbuchwerte für Gras auf Meereshöhe bei 15 °C und Windstille (600 kg); Druckhöhe und Temperatur sind mit einer allgemeinen Faustregel (UK CAA) eingerechnet. Das Handbuch nennt keine Windkorrektur (ohne Gutschrift für Gegenwind gerechnet). Bei Regen ist der Zuschlag des Handbuchs für den Start eingerechnet (ca. +15 %); für die Landung nennt es keinen. Nicht berücksichtigt sind Pistenneigung, hohes Gras, Zustand von Flugzeug und Motor sowie die Pilotentechnik. Massgebend sind das Handbuch der Maschine und die eigene Beurteilung.",
   "sources": {

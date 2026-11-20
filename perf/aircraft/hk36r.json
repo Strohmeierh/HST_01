@@ -5,7 +5,7 @@
   "mass": { "kg": 770, "lb": 1698 },
   "massNoteDe": "Höchstzulässige Start- und Landemasse 770 kg (Flughandbuch Abschnitt 2); Wägebericht der D-KBKB vom 03.07.2023: Höchstmasse 770 kg, Leermasse 594,0 kg. Das Handbuch nennt nur kg; die Pfund sind umgerechnet.",
   "variantDe": "HK 36 R «Super Dimona», Rotax 912 S (100 PS), Verstellpropeller",
-  "techniqueDe": "Vollast, Propeller auf Automatik mit 2385 U/min, Abheben mit 90 km/h (49 kt), Steigflug mit 95 km/h.",
+  "techniqueDe": "Vollast, Propeller Automatik, Asphalt",
   "readingRuleDe": "Druckhöhe (in m), Temperatur und Gegenwindkomponente linear zwischen den Tabellenwerten interpoliert; unter dem kleinsten Tabellenwert gilt dieser (unter 0 °C die Spalte 0 °C), über der grössten Druckhöhe (1200 m) oder Temperatur (30 °C) gibt es keinen Wert. Über 15 kt Gegenwind gilt der Wert für 15 kt.",
   "footerDe": "Richtwert nach Flughandbuch ohne eigenen Sicherheitszuschlag: Höchstmasse 770 kg, Vollast, Propeller Automatik; Druckhöhe, Temperatur und Gegenwind zwischen den Tabellenwerten linear interpoliert; Graspiste mit dem Mindestzuschlag des Handbuchs (Startrollstrecke +20 %). Eine Landestrecke nennt das Handbuch nicht. Für nasses Gras nennt das Handbuch keinen Wert. Nicht berücksichtigt sind Pistenneigung, Grasnarbe, Zustand von Flugzeug und Motor sowie die Pilotentechnik. Massgebend sind das Flughandbuch der Maschine und die eigene Beurteilung.",
   "sources": {

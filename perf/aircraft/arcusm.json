@@ -5,7 +5,7 @@
   "mass": { "kg": 800, "lb": 1764 },
   "massNoteDe": "Höchstzulässige Flugmasse 800 kg (Abschnitt 2.6); die Startstrecken gelten für 800 kg und die vorderste Schwerpunktlage. Das Handbuch nennt nur kg; die Pfund sind umgerechnet.",
   "variantDe": "Arcus M, Klapptriebwerk Solo 2625-02i",
-  "techniqueDe": "Abheben mit ca. 82 km/h, 95 km/h beim Überfliegen des 15-m-Hindernisses.",
+  "techniqueDe": "800 kg, Windstille, Hartbelag",
   "readingRuleDe": "Druckhöhe (in m) und Temperatur linear zwischen den Tabellenwerten interpoliert; unter dem kleinsten Tabellenwert gilt dieser (unter −15 °C die Spalte −15 °C), über der grössten Druckhöhe (2000 m) oder Temperatur (30 °C) gibt es keinen Wert.",
   "footerDe": "Richtwert nach Flughandbuch ohne eigenen Sicherheitszuschlag: Flugmasse 800 kg, vorderste Schwerpunktlage; Druckhöhe und Temperatur zwischen den Tabellenwerten linear interpoliert; harte ebene Graspiste mit ca. +20 % der Rollstrecke. Das Handbuch nennt keine Windkorrektur (ohne Gutschrift für Gegenwind gerechnet) und keine Landestrecke. Feuchter und weicher Boden verlängert die Strecken beträchtlich; einen Wert dafür nennt das Handbuch nicht. Nicht berücksichtigt sind Pistenneigung, Zustand von Flugzeug und Motor sowie die Pilotentechnik. Massgebend sind das Flughandbuch der Maschine und die eigene Beurteilung.",
   "sources": {

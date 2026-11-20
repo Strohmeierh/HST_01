@@ -203,6 +203,7 @@
     .ai-row { font-size: 0.78rem; line-height: 1.5; padding: 4px 0; border-bottom: 1px solid var(--card-border); color: var(--text-muted); }
     .ai-row b { color: var(--text); }
     .ai-row .ai-prob { color: #fcd34d; }
+    .ai-row.ai-done { opacity: 0.7; }      /* DABS-Eintrag heute schon beendet (wie LSZK); 0.7 bleibt am Handy lesbar */
     .ai-row.ai-sub { padding-left: 14px; font-size: 0.74rem; }
     .ai-row.ai-sub b { font-weight: 600; }
     .ai-sub-head { font-size: 0.74rem; font-weight: 600; color: var(--text); margin: 8px 0 2px; }
@@ -875,9 +876,9 @@
         Wetter EDSF
       </button>
 
-      <button class="top-btn ai-btn" id="ai-toggle" type="button" onclick="openAiModal()" aria-haspopup="dialog" title="KI-Briefing">
+      <button class="top-btn ai-btn" id="ai-toggle" type="button" onclick="openAiModal()" aria-haspopup="dialog" title="Briefing">
         <span class="brf-dot ai-dot loading" id="ai-dot" aria-hidden="true"></span>
-        KI-Briefing<span class="ai-time" id="ai-time"></span><span class="ai-warn" id="ai-warn" aria-hidden="true"></span><span class="brf-new ai-new" id="ai-new" hidden>neu</span>
+        Briefing<span class="ai-time" id="ai-time"></span><span class="ai-warn" id="ai-warn" aria-hidden="true"></span><span class="brf-new ai-new" id="ai-new" hidden>neu</span>
       </button>
 
       <div class="dropdown">
@@ -903,6 +904,29 @@
 
   <!-- Briefing-Ampel: Kurzüberblick, Klick öffnet die Erklärung im Detail-Fenster -->
   <div id="briefing-bar" title="Ampel – Klick für Werte &amp; Erklärung"></div>
+
+  <!-- Start-/Landestrecke: Kurzzeile unter der Ampel (Muster, Piste, Rollstrecke Start und Landung), Antippen klappt
+       die Karte auf. Texte, Zahlen und CSS kommen aus perf/perf-ui.js, die Rechnung aus perf/perf.js, die Messwerte
+       aus window.EDSF_WX (Station EDSF). Sichtbar ab dem ersten Messwert-Update. Titel ohne «nach AFM»: beim Eurostar
+       ist eine Faustregel eingerechnet (nicht aus dem AFM, in der Karte gekennzeichnet). -->
+  <details class="perf-box" id="perf-box" style="display:none;">
+    <summary class="perf-teaser" id="perf-teaser" title="Start- und Landestrecke – Richtwert. Klick öffnet oder schliesst die Details mit Rechenweg und Hinweisen.">
+      <span class="perf-t">
+        <svg class="perf-t-ico" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M5 20v-3"/><path d="M10 20v-2"/><path d="M15 20v-3"/><path d="M20 20v-2"/><path d="M3 13l6-2 12-7"/></svg>
+        <span class="perf-t-body" id="perf-teaser-text"></span>
+        <svg class="perf-t-chev" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </span>
+    </summary>
+    <div class="wx-card" id="perf-card" data-airfield="edsf">
+      <div class="wx-card-title">
+        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 20h20"/><path d="M5 20v-3"/><path d="M10 20v-2"/><path d="M15 20v-3"/><path d="M20 20v-2"/><path d="M3 13l6-2 12-7"/>
+        </svg>
+        Start- und Landestrecke – Richtwert
+      </div>
+      <div id="perf-content"></div>
+    </div>
+  </details>
 
   <div class="wx-panel" id="wx-panel">
     <div class="wx-tools">
@@ -1807,7 +1831,7 @@
           tm = document.getElementById('ai-time'), nw = document.getElementById('ai-new'),
           wn = document.getElementById('ai-warn');
       if (!btn || !dot || !tm || !nw) return;
-      var st = aiState(), now = new Date(), time = '', label = 'KI-Briefing';
+      var st = aiState(), now = new Date(), time = '', label = 'Briefing';
       dot.className = 'brf-dot ai-dot';
       dot.style.background = AI_GREY;
       if (st.kind === 'loading') {
@@ -1903,20 +1927,27 @@
       if (x.ok !== true || !stand || !tag) return html + '<div class="ai-row">DABS nicht auswertbar – bitte das Original öffnen.</div>';
       if (aiDay(tag) !== aiDay(now)) return html + '<div class="ai-row">Der Auszug ist nicht von heute und wird nicht mehr angezeigt.</div>';
       var hits = Array.isArray(x.treffer) ? x.treffer.filter(aiObj) : [];
+      var nDone = 0;
       hits.forEach(function (t) {
+        var done = t.beendet === true;         // heute schon vorbei: grau, damit die Liste zur DABS-Karte passt (wie LSZK)
+        if (done) nDone++;
         var kopf = [aiStr(t.gebiet), aiStr(t.notam)].filter(Boolean).join(' · ') || 'Eintrag';
         var band = aiDeAlt((aiMslBand(t.unten) || '?') + ' bis ' + (aiMslBand(t.oben) || '?'));
-        html += '<div class="ai-row"><b>' + escHtml(kopf) + '</b> ' + escHtml(aiStr(t.zeit)) + ' · ' + escHtml(band) +
+        var zeit = aiStr(t.zeit);              // Lokalzeit mit «LT» (wie LSZK); ältere Datensätze ohne Zusatz
+        if (/^\d{2}:\d{2}/.test(zeit) && !/\b(?:LT|UTC)\b/.test(zeit)) zeit += ' LT';
+        html += '<div class="ai-row' + (done ? ' ai-done' : '') + '"><b>' + escHtml(kopf) + '</b> ' + escHtml(zeit) +
+          (done ? ' · beendet' : '') + ' · ' + escHtml(band) +
           (t.unsicher === true ? ' ⚠ <span class="ai-prob">nicht eindeutig lesbar</span>' : '') +
           '<br>' + escHtml(aiStr(t.text)) +
           (t.karte === false ? ' <span class="ai-muted">· nicht auf der DABS-Karte</span>' : '') + '</div>';
       });
       if (!hits.length) html += '<div class="ai-row">Keine DABS-Einträge im Filter.</div>';
+      else if (nDone === hits.length) html += '<div class="ai-row">Keine weiteren DABS-Einträge im Filter.</div>';
       var ver = (typeof x.version === 'number' && isFinite(x.version)) ? 'Version ' + x.version + ', ' : '';
       var tot = (typeof x.eintraege_total === 'number' && isFinite(x.eintraege_total))
-        ? ' · ' + hits.length + ' von ' + x.eintraege_total + ' Einträgen' : '';
-      return html + '<div class="brf-src">Stand ' + ver + aiDM(stand) + ' ' + aiHM(stand) + ' (Zeiten in Lokalzeit)' + tot +
-        (aiStr(x.filter) ? ' · ' + escHtml(x.filter) : '') + ' · neue Versionen um 09:00, 13:00 und 16:00 · ' +
+        ? ' · ' + hits.length + ' von ' + x.eintraege_total + ' Einträgen' + (nDone ? ' (' + nDone + ' beendet)' : '') : '';
+      return html + '<div class="brf-src">Stand ' + ver + aiDM(stand) + ' ' + aiHM(stand) + ' LT' + tot +
+        (aiStr(x.filter) ? ' · ' + escHtml(x.filter) : '') + ' · neue Versionen um 09:00, 13:00 und 16:00 LT · LT = Lokalzeit · ' +
         '<a href="https://www.skybriefing.com/o/dabs?today" target="_blank" rel="noopener noreferrer">Original-DABS (PDF)</a></div>';
     }
     // ED-R 132 Heuberg (Wunsch 16.11.): Auszüge vom Programm – A aus der Schiesswarnung der Gemeinde Stetten a. k. M.,
@@ -2169,6 +2200,54 @@
     window.openAiModal = openAiModal;
 
     /* ── Wetterdaten EDSF ─────────────────────────────────────── */
+    /* Feste Schnittstelle für weitere Module der Seite (Start-/Landestreckenrechner): window.EDSF_WX (Plan 20.11.2026).
+       Die Feldnamen bleiben stabil. Jedes Zahlenfeld ist eine endliche Zahl oder null; 0 heisst immer «gemessen 0».
+       Bei stale === true nicht rechnen.
+         src 'edsf' | null · srcLabel 'Station EDSF' | null · time = Messzeit aus timeUTC in ms seit Epoche · ageMin ·
+         stale: keine Station, keine lesbare Messzeit oder 45 min und älter ·
+         windKt = wspeed (Mittelwind in km/h) / 1,852, ungerundet · windDir = avgbearing in Grad (0 oder fehlend: null) ·
+         gustKt = wgust / 1,852 · tempC (temp) · dewC (dew) · humPct (hum) · qnhHpa (press) · rainMmH (rrate) ·
+         rainTodayMm (rfall)
+       Die Station liefert Zahlen als Text mit Komma oder Punkt («5,6», «0.6»); alles andere ergibt null.
+       SensorContactLost «1»: src null, alle Werte null. Kacheln und Pistendiagramm lesen die Datei weiter selbst. */
+    var EDSF_WX_STALE_MIN = 45;
+    function edsfNum(v) {
+      if (typeof v === 'number') return isFinite(v) ? v : null;
+      if (typeof v !== 'string' || !/^\s*[-+]?\d+(?:[.,]\d+)?\s*$/.test(v)) return null;
+      return parseFloat(v.replace(',', '.'));
+    }
+    function edsfTimeMs(s) {               // timeUTC «2026,11,20,10,40,00» in ms; unlesbar: null
+      var m = typeof s === 'string' ? /^\s*(\d{4}),(\d{1,2}),(\d{1,2}),(\d{1,2}),(\d{1,2})(?:,(\d{1,2}))?\s*$/.exec(s) : null;
+      if (!m) return null;
+      var mo = +m[2], d = +m[3], h = +m[4], mi = +m[5], se = m[6] === undefined ? 0 : +m[6];
+      if (mo < 1 || mo > 12 || d < 1 || h > 23 || mi > 59 || se > 59) return null;
+      var t = Date.UTC(+m[1], mo - 1, d, h, mi, se);
+      return new Date(t).getUTCDate() === d ? t : null;     // kein 31.11.
+    }
+    function edsfWxEmpty() {
+      return { src: null, srcLabel: null, time: null, ageMin: null, stale: true, windKt: null, windDir: null, gustKt: null,
+               tempC: null, dewC: null, humPct: null, qnhHpa: null, rainMmH: null, rainTodayMm: null };
+    }
+    function edsfWx(d, nowMs) {
+      if (!d || typeof d !== 'object' || Array.isArray(d) || String(d.SensorContactLost) === '1') return edsfWxEmpty();
+      var time = edsfTimeMs(d.timeUTC), age = time === null ? null : (nowMs - time) / 60000;
+      var ws = edsfNum(d.wspeed), wg = edsfNum(d.wgust), dir = edsfNum(d.avgbearing);
+      return {
+        src: 'edsf', srcLabel: 'Station EDSF', time: time, ageMin: age, stale: time === null || age >= EDSF_WX_STALE_MIN,
+        windKt: ws === null ? null : ws / 1.852, windDir: dir === null || dir === 0 ? null : dir,
+        gustKt: wg === null ? null : wg / 1.852,
+        tempC: edsfNum(d.temp), dewC: edsfNum(d.dew), humPct: edsfNum(d.hum), qnhHpa: edsfNum(d.press),
+        rainMmH: edsfNum(d.rrate), rainTodayMm: edsfNum(d.rfall)
+      };
+    }
+    // Rechner über neue Werte informieren; ein Fehler dort darf die Wetteranzeige nicht stören
+    function edsfPerfUpdate() {
+      if (window.EdsfPerf && typeof window.EdsfPerf.update === 'function') {
+        try { window.EdsfPerf.update(window.EDSF_WX); }
+        catch (e) { if (window.console && console.warn) console.warn('EdsfPerf.update:', e); }
+      }
+    }
+
     function loadWetter() {
       var el  = document.getElementById('wx-content');
       var url = 'gauge-data.txt?t=' + Date.now();
@@ -2185,6 +2264,8 @@
     }
 
     function renderWetter(el, d) {
+      window.EDSF_WX = edsfWx(d, Date.now());   // Schnittstelle für den Rechner; gemeldet am Ende (edsfPerfUpdate)
+
       function f(v, dez) {
         if (v === undefined || v === null || v === '') return '–';
         var n = parseFloat(String(v).replace(',', '.'));
@@ -2360,6 +2441,8 @@
             daHtml +
           '</div>' +
         '</div>';
+
+      edsfPerfUpdate();
     }
 
     function buildRunwayDiagram(bearing, wspeed, wgust) {
@@ -2369,18 +2452,22 @@
       var head  = Math.round(wspeed * Math.cos(diffRad));
       var cross = Math.round(wspeed * Math.sin(diffRad));
 
+      // Farbschwellen für den Seitenwind in Knoten (wie LSZK seit 18.11.2026, vorher 5/10 km/h): grün bis 5 kt,
+      // gelb bis 10 kt, darüber rot. Massgebend ist der angezeigte, gerundete kt-Wert, damit Zahl und Farbe zusammenpassen.
       var absX  = Math.abs(cross);
-      var color = absX <= 5  ? '#10b981' :
-                  absX <= 10 ? '#f59e0b' :
-                               '#ef4444';
+      var xKt   = Math.round(absX / 1.852);
+      var color = xKt <= 5  ? '#10b981' :
+                  xKt <= 10 ? '#f59e0b' :
+                              '#ef4444';
 
-      // Böen-Komponenten (gleiche Schwellen wie Mittelwind, Werte in km/h)
+      // Böen-Komponenten (gleiche Schwellen wie Mittelwind)
       var hasGust = wgust > 0;
       var gCross  = Math.round(wgust * Math.sin(diffRad));
       var gAbsX   = Math.abs(gCross);
-      var gColor  = gAbsX <= 5  ? '#10b981' :
-                    gAbsX <= 10 ? '#f59e0b' :
-                                  '#ef4444';
+      var gXKt    = Math.round(gAbsX / 1.852);
+      var gColor  = gXKt <= 5  ? '#10b981' :
+                    gXKt <= 10 ? '#f59e0b' :
+                                 '#ef4444';
 
       var W = 180, H = hasGust ? 270 : 250, cx = W/2, cy = 108;
       var boxH = hasGust ? 78 : 58;
@@ -2575,6 +2662,8 @@
     }
 
     function renderFallback(el) {
+      window.EDSF_WX = edsfWxEmpty();      // keine Messwerte: der Rechner zeigt keine Zahlen
+      edsfPerfUpdate();
       el.innerHTML =
         '<div class="wx-error">Wetterdaten konnten nicht geladen werden.</div>' +
         '<a href="http://www.lgh-platz.de/wetter/index.html" target="_blank" rel="noopener" ' +
@@ -3815,6 +3904,10 @@ load();
     });
   })();
   </script>
+
+  <!-- Start-/Landestreckenrechner (Kurzzeile #perf-box mit der Rollstrecke unter der Ampel, Karte #perf-card darin): erst Rechenkern, dann Anzeige. ?v= bei jeder Änderung an perf/*.js in beiden Zeilen erhöhen. -->
+  <script defer src="perf/perf.js?v=8"></script>
+  <script defer src="perf/perf-ui.js?v=8"></script>
 
   <!-- GoatCounter: cookielose Aufruf-Statistik (strohmeierh.goatcounter.com) -->
   <!-- Pfad-Präfix: Unter edsf.strowa.ch wäre der Pfad nur "/" (wie bei LSZK). Mit Präfix zählt EDSF weiter als /HST_01/ wie vor dem Domainwechsel (16.11.2026). -->

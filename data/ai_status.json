@@ -1,35 +1,58 @@
 {
   "stats": {
     "month": "2026-11",
-    "cost_month_usd": 4.0101,
+    "cost_month_usd": 3.8354,
     "attempts_month": 16,
     "date": "2026-11-21",
-    "cost_today_usd": 0.4,
+    "cost_today_usd": 0.2253,
     "attempts_today": 1,
     "budget_month_usd": 60.0,
-    "reserved_usd": 0.4
+    "reserved_usd": 0.0
   },
   "schema_version": 1,
-  "ok": false,
+  "ok": true,
   "attempted_at_utc": "2026-11-21T07:05:53+00:00",
   "slot": "07:30",
   "reserved_run": "44878495752.1",
-  "fail_streak": 1,
-  "error": "Versuch läuft oder wurde abgebrochen (kein Ergebnis gespeichert)",
+  "fail_streak": 0,
+  "error": null,
   "sun": {
-    "rise": "07:40",
-    "set": "16:47"
+    "rise": "07:41",
+    "set": "16:46"
   },
   "dabs": {
     "ok": true,
-    "datum": "2026-11-20",
-    "version": 3,
-    "stand_utc": "2026-11-20T11:45:00+00:00",
-    "abgerufen_utc": "2026-11-20T12:00:57+00:00",
+    "datum": "2026-11-21",
+    "version": 1,
+    "stand_utc": "2026-11-20T14:31:00+00:00",
+    "abgerufen_utc": "2026-11-21T04:10:46+00:00",
     "quelle": "https://www.skybriefing.com/o/dabs?today",
     "filter": "Fluggebiet Hochrhein–Schaffhausen–Birrfeld–Jurasüdfuss–La Chaux-de-Fonds–Ajoie–Basel mit 10 km Marge, Untergrenze unter FL150, bis 30 min nach Sonnenuntergang",
-    "eintraege_total": 4,
-    "treffer": [],
+    "eintraege_total": 2,
+    "treffer": [
+      {
+        "gebiet": "",
+        "notam": "",
+        "zeit": "Zeit unlesbar",
+        "unten": "",
+        "oben": "",
+        "text": "",
+        "karte": true,
+        "unsicher": true,
+        "beendet": false
+      },
+      {
+        "gebiet": "",
+        "notam": "",
+        "zeit": "Zeit unlesbar",
+        "unten": "",
+        "oben": "",
+        "text": "",
+        "karte": false,
+        "unsicher": true,
+        "beendet": false
+      }
+    ],
     "fehler": null,
     "zwischenspeicher": true,
     "aktuell": true,
@@ -37,17 +60,19 @@
   },
   "edr": {
     "ok": true,
-    "abgerufen_utc": "2026-11-20T13:30:50+00:00",
+    "abgerufen_utc": "2026-11-21T07:05:59+00:00",
     "quelle": "https://www.dipul.de/homepage/de/informationen/geografische-gebiete/wfs-wms/",
     "lizenz": "dipul, CC BY-ND 4.0",
     "filter": "Schwarzwald, Baar und Schwäbische Alb (Lörrach–Offenburg–Pforzheim–Tübingen–Sigmaringen–Waldshut) mit 15 km Marge, nur § 17 LuftVO, Untergrenze unter FL150, bis 30 min nach Sonnenuntergang",
-    "eintraege_total": 34,
+    "eintraege_total": 35,
     "treffer": [],
     "fehler": null
   },
   "inputs": {
     "kameras": [
       "EDSF – Start Piste 11",
+      "EDSF – Flugfeld 1",
+      "EDSF – Flugfeld 3",
       "EDSF – Blick nach Norden",
       "Rickenbach Altenschwand 2",
       "Feldberg Seebuck",
@@ -57,44 +82,39 @@
       "Klippeneck – Panorama",
       "Raichberg",
       "Flugplatz Schupfart",
-      "Passwang",
-      "Weissenstein"
+      "Passwang"
     ],
     "fehlend": [
       {
-        "titel": "EDSF – Flugfeld 1",
-        "grund": "Bild seit 2514 Tagen unverändert (Kamera eingefroren?)"
-      },
-      {
-        "titel": "EDSF – Flugfeld 3",
-        "grund": "Bild seit 2514 Tagen unverändert (Kamera eingefroren?)"
+        "titel": "Weissenstein",
+        "grund": "Bild seit 16 h 15 min unverändert (Kamera eingefroren?)"
       }
     ],
     "fehler": [],
     "station": "live"
   },
   "usage": {
-    "input_tokens": 33751,
-    "output_tokens": 4186,
+    "input_tokens": 35442,
+    "output_tokens": 4177,
     "cache_creation_input_tokens": 0,
     "cache_read_input_tokens": 0,
     "attempts": 1,
-    "cost_usd": 0.2187
+    "cost_usd": 0.2253
   },
   "served_by": "claude-opus-5-5",
-  "request_id": "req_011ChEGBJWbs4aa6Xoq4vZ2y",
-  "generated_at_utc": "2026-11-20T13:30:50+00:00",
+  "request_id": "req_011ChFee4J95q2zZH7GodC3n",
+  "generated_at_utc": "2026-11-21T07:05:59+00:00",
   "model": "claude-opus-5-5",
-  "slot_planned_utc": "2026-11-20T13:30:00+00:00",
+  "slot_planned_utc": "2026-11-21T07:05:00+00:00",
   "effort": "medium",
   "korrekturen": [],
   "thermik": {
     "quelle": "Open-Meteo",
-    "tag": "2026-11-20",
+    "tag": "2026-11-21",
     "kurz": "Keine nutzbare Thermik",
     "stufe": "keine",
     "nutzbar": false,
-    "zusammenfassung": "Keine nutzbare Thermik, Auslösetemperatur nicht erreicht oder zu stark bewölkt.",
+    "zusammenfassung": "Keine nutzbare Thermik, Auslösetemperatur wird nirgends erreicht.",
     "wind_hoehe_m": 1500,
     "gebiete": [],
     "regionen": [
@@ -111,10 +131,10 @@
         "blau": null,
         "grund": "Auslösetemperatur wird nicht erreicht",
         "ausloesetemp_c": 6.0,
-        "cape_max": 50,
+        "cape_max": 40,
         "risiko": "gering",
-        "wind_kt": 42,
-        "wind_dir": 255,
+        "wind_kt": 22,
+        "wind_dir": 271,
         "wind_stark": true
       },
       {
@@ -129,12 +149,12 @@
         "basis_m": null,
         "blau": null,
         "grund": "Auslösetemperatur wird nicht erreicht",
-        "ausloesetemp_c": 5.9,
-        "cape_max": 10,
+        "ausloesetemp_c": 5.2,
+        "cape_max": 20,
         "risiko": "gering",
-        "wind_kt": 46,
-        "wind_dir": 248,
-        "wind_stark": true
+        "wind_kt": 18,
+        "wind_dir": 266,
+        "wind_stark": false
       },
       {
         "region": "mittl_schwarzwald",
@@ -148,12 +168,12 @@
         "basis_m": null,
         "blau": null,
         "grund": "Auslösetemperatur wird nicht erreicht",
-        "ausloesetemp_c": 6.2,
+        "ausloesetemp_c": 5.5,
         "cape_max": 10,
         "risiko": "gering",
-        "wind_kt": 53,
-        "wind_dir": 250,
-        "wind_stark": true
+        "wind_kt": 17,
+        "wind_dir": 270,
+        "wind_stark": false
       },
       {
         "region": "nordschwarzwald",
@@ -167,12 +187,12 @@
         "basis_m": null,
         "blau": null,
         "grund": "Auslösetemperatur wird nicht erreicht",
-        "ausloesetemp_c": 7.5,
-        "cape_max": 10,
+        "ausloesetemp_c": 5.7,
+        "cape_max": 0,
         "risiko": "gering",
-        "wind_kt": 50,
-        "wind_dir": 251,
-        "wind_stark": true
+        "wind_kt": 18,
+        "wind_dir": 277,
+        "wind_stark": false
       },
       {
         "region": "westalb",
@@ -186,12 +206,12 @@
         "basis_m": null,
         "blau": null,
         "grund": "Auslösetemperatur wird nicht erreicht",
-        "ausloesetemp_c": 6.0,
-        "cape_max": 20,
+        "ausloesetemp_c": 4.7,
+        "cape_max": 0,
         "risiko": "gering",
-        "wind_kt": 39,
-        "wind_dir": 249,
-        "wind_stark": true
+        "wind_kt": 15,
+        "wind_dir": 272,
+        "wind_stark": false
       },
       {
         "region": "donautal",
@@ -204,13 +224,13 @@
         "ueber_kamm_m": null,
         "basis_m": null,
         "blau": null,
-        "grund": "zu stark bewölkt oder Niederschlag",
-        "ausloesetemp_c": 6.9,
-        "cape_max": 20,
+        "grund": "Auslösetemperatur wird nicht erreicht",
+        "ausloesetemp_c": 5.9,
+        "cape_max": 0,
         "risiko": "gering",
-        "wind_kt": 46,
-        "wind_dir": 249,
-        "wind_stark": true
+        "wind_kt": 18,
+        "wind_dir": 270,
+        "wind_stark": false
       },
       {
         "region": "mittlere_alb",
@@ -223,13 +243,13 @@
         "ueber_kamm_m": null,
         "basis_m": null,
         "blau": null,
-        "grund": "zu stark bewölkt oder Niederschlag",
-        "ausloesetemp_c": 7.0,
-        "cape_max": 10,
+        "grund": "Auslösetemperatur wird nicht erreicht",
+        "ausloesetemp_c": 5.4,
+        "cape_max": 0,
         "risiko": "gering",
-        "wind_kt": 45,
-        "wind_dir": 252,
-        "wind_stark": true
+        "wind_kt": 19,
+        "wind_dir": 279,
+        "wind_stark": false
       },
       {
         "region": "jura_ost",
@@ -243,11 +263,11 @@
         "basis_m": null,
         "blau": null,
         "grund": "Auslösetemperatur wird nicht erreicht",
-        "ausloesetemp_c": 7.8,
-        "cape_max": 20,
+        "ausloesetemp_c": 8.0,
+        "cape_max": 40,
         "risiko": "gering",
-        "wind_kt": 40,
-        "wind_dir": 241,
+        "wind_kt": 21,
+        "wind_dir": 262,
         "wind_stark": true
       },
       {
@@ -262,50 +282,50 @@
         "basis_m": null,
         "blau": null,
         "grund": "Auslösetemperatur wird nicht erreicht",
-        "ausloesetemp_c": 5.8,
-        "cape_max": 10,
+        "ausloesetemp_c": 6.0,
+        "cape_max": 30,
         "risiko": "gering",
-        "wind_kt": 48,
-        "wind_dir": 242,
+        "wind_kt": 20,
+        "wind_dir": 248,
         "wind_stark": true
       }
     ]
   },
   "briefing": {
-    "headline": "Bedeckt, Basis um 1.100 m MSL, Höhen in Wolken",
-    "text": "Wind 268°/11 kt, Böen 21 kt. Bedeckt, Basis um 1.100 m MSL (rund 220 m über Platz), Sicht 21 km (Aargauer Jura), dunstig. Belchen, Schauinsland, Feldberg und Weissenstein in Wolken, Jurakämme teilweise verhüllt, auf der Alb aufgelockert. Prognose: weiterhin bedeckt, Regen wahrscheinlich (100 %), Wind auf 1.500 m MSL um 250°/40 kt, am Platz Böen bis 35 kt. Ab 21 Uhr Sichtabnahme, ab 22 Uhr Wolken bis auf Platzhöhe; keine nutzbare Thermik.",
+    "headline": "Platz in Wolke, Basis unter Platzhöhe, Regen wahrscheinlich",
+    "text": "Platz in Wolke, Sicht stark eingeschränkt, Basis um 850 m MSL (unter Platzhöhe), Wind 270°/10 kt, Böen 13 kt. Südschwarzwald, Hotzenwald und Kettenjura in Wolken; Baar und Alb bedeckt, Albtrauf knapp frei. Prognose: Regenwahrscheinlichkeit 60 % in den nächsten 3 Stunden, Regen wahrscheinlich vor allem 11–13 Uhr, danach tiefe Bewölkung, Auflockerung und bessere Sicht erst ab etwa 18 Uhr. DABS Schweiz (Version 1, Stand 20.11. 15:31 LT): 2 Einträge ohne Gebietsnummer, Zeit und Höhe nicht lesbar.",
     "lage": "schlecht"
   },
   "himmel": {
     "bedeckung_achtel": 8,
-    "wolkenbasis_m": 1100,
+    "wolkenbasis_m": 850,
     "basis_quelle": "kombiniert",
-    "sicht": "maessig",
-    "sicht_km": 21,
-    "nebel": "dunst",
+    "sicht": "schlecht",
+    "sicht_km": null,
+    "nebel": "hochnebel",
     "nebel_obergrenze_m": null,
-    "schneegrenze_m": null,
+    "schneegrenze_m": 1300,
     "niederschlag": "in_der_ferne",
     "regionen": [
       {
         "region": "platz",
-        "zustand": "Hornberg-Rücken frei, Wolkenuntergrenze knapp darüber; Piste nass."
+        "zustand": "In Wolke, Hornberg und Rüttehof nicht erkennbar, Gras nass."
       },
       {
         "region": "hotzenwald",
-        "zustand": "Hochfläche frei, Jura im Süden nur schwach erkennbar, kein Schnee."
+        "zustand": "Hochfläche und Südabfall in Wolken, von Schupfart aus Wolkenauflage um 850 m MSL."
       },
       {
         "region": "suedschwarzwald",
-        "zustand": "Höhen ab rund 1.200 m MSL in Wolken, an Belchen und Schauinsland Niederschlag."
+        "zustand": "Belchen und Schauinsland in Wolken, Seebuck-Kuppe um 1.400 m MSL teils verhüllt, dünne Schneedecke ab rund 1.300 m MSL."
       },
       {
         "region": "baar_alb",
-        "zustand": "Baar stark bewölkt, Alb aufgelockert mit Lücken, Albtrauf frei, gute Sicht ins Vorland; Wind am Raichberg um 22 kt, Böen 31 kt."
+        "zustand": "Baar bedeckt, Randhöhen sichtbar; Albtrauf knapp frei, Wolkenfetzen im Albvorland und am Raichberg."
       },
       {
         "region": "hochrhein_jura",
-        "zustand": "Hotzenwald-Südrand von Süden frei, Jurakämme um 1.100 m MSL teilweise in Wolken, Schauer, Alpen nicht sichtbar."
+        "zustand": "Fricktal bedeckt, Sicht nach Norden rund 19 km; Passwang in Wolke, Kettenjura verhüllt."
       }
     ]
   },
@@ -313,74 +333,94 @@
     {
       "titel": "EDSF – Start Piste 11",
       "key": "https://wsrv.nl/?url=www.lgh-platz.de/cam/cam61.jpg",
-      "bildalter_min": 10,
-      "satz": "Bedeckt, Gras nass, ferne Höhenzüge im Osten nur schwach erkennbar.",
+      "bildalter_min": 113,
+      "satz": "Keine Beobachtung möglich.",
+      "tags": [],
+      "problem": "nacht"
+    },
+    {
+      "titel": "EDSF – Flugfeld 1",
+      "key": "https://wsrv.nl/?url=www.lgh-platz.de/cam/cam31.jpg",
+      "bildalter_min": 6,
+      "satz": "Platz in Wolke, Häuser von Hütten nicht erkennbar, Gras nass.",
       "tags": [
-        "bedeckt",
+        "in_wolke",
+        "nebel",
         "nasse_piste"
       ],
-      "problem": "linse_nass"
+      "problem": "keins"
+    },
+    {
+      "titel": "EDSF – Flugfeld 3",
+      "key": "https://wsrv.nl/?url=www.lgh-platz.de/cam/cam51.jpg",
+      "bildalter_min": 6,
+      "satz": "Platz in Wolke, Kettenjura und naher Hang nicht erkennbar.",
+      "tags": [
+        "in_wolke",
+        "nebel"
+      ],
+      "problem": "keins"
     },
     {
       "titel": "EDSF – Blick nach Norden",
       "key": "https://wsrv.nl/?url=www.lgh-platz.de/cam/cam91.jpg",
-      "bildalter_min": 1,
-      "satz": "Bedeckt, Hornberg-Rücken frei, Basis knapp über 1.050 m MSL; Zufahrt nass.",
+      "bildalter_min": 3,
+      "satz": "In Wolke, Hornberg und Rüttehof verdeckt, nur Zufahrt und Zaun erkennbar, Zufahrt nass.",
       "tags": [
-        "bedeckt",
-        "tiefe_wolken",
-        "nasse_piste"
+        "in_wolke",
+        "nebel"
       ],
       "problem": "keins"
     },
     {
       "titel": "Rickenbach Altenschwand 2",
       "key": "https://wsrv.nl/?url=www.ziis.de/cam/mega.jpg",
-      "bildalter_min": 12,
-      "satz": "Bedeckt, dunstig, Jura im Süden nur schwach erkennbar, kein Schnee.",
+      "bildalter_min": 7,
+      "satz": "In Wolke, Rickenbach und Jura nicht erkennbar.",
       "tags": [
-        "bedeckt",
-        "dunst"
+        "in_wolke",
+        "nebel"
       ],
       "problem": "keins"
     },
     {
       "titel": "Feldberg Seebuck",
       "key": "https://wsrv.nl/?url=www.feldberger-hof.de/static/webcam/fh-webcam.jpg",
-      "bildalter_min": 1,
-      "satz": "In der Wolke, Basis unter 1.280 m MSL, nur nahe Gebäude erkennbar, kein Schnee.",
+      "bildalter_min": 6,
+      "satz": "Hang dünn verschneit, obere Hangkante um 1.400 m MSL teils in Wolken.",
       "tags": [
-        "in_wolke"
+        "tiefe_wolken",
+        "schnee"
       ],
       "problem": "keins"
     },
     {
       "titel": "Belchen",
       "key": "https://wsrv.nl/?url=belchen.it-wms.com/panorama1_raw.jpg",
-      "bildalter_min": 28,
-      "satz": "In der Wolke, Basis unter 1.350 m MSL, Regen.",
+      "bildalter_min": 4,
+      "satz": "Belchen in Wolke, Basis unter 1.350 m MSL, Gipfelwiese teils mit Schnee.",
       "tags": [
         "in_wolke",
-        "niederschlag"
+        "schnee"
       ],
       "problem": "keins"
     },
     {
       "titel": "Schauinsland (Bergstation)",
       "key": "wtvpict.feratel.com/picture/35/3212.jpeg",
-      "bildalter_min": 7,
-      "satz": "In der Wolke, Basis unter 1.220 m MSL, nur nahe Bäume erkennbar, Regen.",
+      "bildalter_min": 10,
+      "satz": "In Wolke, Basis unter 1.220 m MSL, Rheinebene nicht erkennbar.",
       "tags": [
         "in_wolke",
-        "niederschlag"
+        "nebel"
       ],
       "problem": "keins"
     },
     {
       "titel": "Flugplatz Donaueschingen EDTD",
       "key": "https://wsrv.nl/?url=images-webcams.windy.com/10/1471968410/current/original/1471968410.jpg",
-      "bildalter_min": 7,
-      "satz": "Stark bewölkt mit helleren Lücken, Randhöhen der Baar frei, Vorfeld nass.",
+      "bildalter_min": 9,
+      "satz": "Bedeckt mit Stratocumulus, Randhöhen sichtbar, Rollwege nass.",
       "tags": [
         "bedeckt",
         "nasse_piste"
@@ -390,52 +430,41 @@
     {
       "titel": "Klippeneck – Panorama",
       "key": "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM1.jpg",
-      "bildalter_min": 102,
-      "satz": "Bild über 1,5 h alt: bedeckt, Albtrauf frei, Vorland gut sichtbar, Schwarzwald im Dunst.",
+      "bildalter_min": 87,
+      "satz": "Albtrauf knapp frei, tiefe Wolkenfetzen im Albvorland, bedeckt, Denkingen erkennbar.",
       "tags": [
         "bedeckt",
-        "dunst"
+        "tiefe_wolken"
       ],
       "problem": "keins"
     },
     {
       "titel": "Raichberg",
       "key": "https://wsrv.nl/?url=images-webcams.windy.com/38/1406140938/current/original/1406140938.jpg",
-      "bildalter_min": 5,
-      "satz": "Aufgelockert mit sonnigen Abschnitten, Albtrauf frei, gute Sicht ins Vorland; Wind WSW 22 kt, Böen 31 kt.",
+      "bildalter_min": 4,
+      "satz": "Basis um 960 m MSL, Wolkenfetzen an der Traufkante, Vorland verhüllt.",
       "tags": [
-        "quellwolken",
-        "sonnig"
+        "tiefe_wolken",
+        "bedeckt"
       ],
       "problem": "keins"
     },
     {
       "titel": "Flugplatz Schupfart",
       "key": "https://wsrv.nl/?url=flugplatzschupfart.roundshot.com/cams/632/medium",
-      "bildalter_min": 5,
-      "satz": "Bedeckt, Hotzenwald-Südrand frei, Hochblauen schwach erkennbar, Piste nass.",
+      "bildalter_min": 10,
+      "satz": "Bedeckt, Hotzenwald-Südrand in Wolken, Hohe Möhr erkennbar, Piste nass.",
       "tags": [
         "bedeckt",
-        "nasse_piste"
+        "tiefe_wolken"
       ],
       "problem": "keins"
     },
     {
       "titel": "Passwang",
       "key": "https://wsrv.nl/?url=passwang.roundshot.com/cams/1961/medium",
-      "bildalter_min": 17,
-      "satz": "Tiefe Wolken, Kämme um 1.100 m MSL teilweise verhüllt, Schauer, Alpen nicht sichtbar.",
-      "tags": [
-        "tiefe_wolken",
-        "niederschlag"
-      ],
-      "problem": "keins"
-    },
-    {
-      "titel": "Weissenstein",
-      "key": "https://wsrv.nl/?url=hotelweissenstein.roundshot.com/cams/726/medium",
-      "bildalter_min": 6,
-      "satz": "In der Wolke, Basis unter 1.284 m MSL.",
+      "bildalter_min": 2,
+      "satz": "Passwang in Wolke, Basis unter 1.190 m MSL, Alpen und Juraketten verdeckt.",
       "tags": [
         "in_wolke"
       ],
@@ -443,22 +472,16 @@
     }
   ],
   "heuberg": {
-    "abgerufen_utc": "2026-11-20T13:30:50+00:00",
+    "abgerufen_utc": "2026-11-21T07:05:59+00:00",
     "a": {
       "ok": true,
       "quelle": "https://www.stetten-akm.de/gemeinde/stetten-und-bundeswehr/aktuelle-schiesswarnungen",
       "heute": {
-        "datum": "2026-11-20",
-        "von": "06:45",
-        "bis": "12:30",
-        "unsicher": true
+        "datum": "2026-11-21",
+        "kein_schiessen": true,
+        "unsicher": false
       },
       "folgetage": [
-        {
-          "datum": "2026-11-21",
-          "kein_schiessen": true,
-          "unsicher": false
-        },
         {
           "datum": "2026-11-22",
           "kein_schiessen": true,
@@ -469,7 +492,7 @@
     "b": {
       "ok": true,
       "quelle": "https://airspace.xcontest.org/",
-      "stand_utc": "2026-11-20T08:03:48+00:00",
+      "stand_utc": "2026-11-20T20:02:35+00:00",
       "heute": [],
       "naechstes": "24.11. 17:00–22:30",
       "fenster_utc": [
@@ -504,14 +527,14 @@
   "open_meteo": {
     "prognose": {
       "ok": true,
-      "abgerufen_utc": "2026-11-20T13:25:53+00:00",
+      "abgerufen_utc": "2026-11-21T07:00:42+00:00",
       "alter_min": 5,
       "zwischenspeicher": true,
       "abruf_fehler": null
     },
     "thermik": {
       "ok": true,
-      "abgerufen_utc": "2026-11-20T13:25:53+00:00",
+      "abgerufen_utc": "2026-11-21T07:00:42+00:00",
       "alter_min": 5,
       "zwischenspeicher": true,
       "abruf_fehler": null

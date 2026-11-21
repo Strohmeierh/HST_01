@@ -189,6 +189,7 @@
     .ai-st-row + .ai-st-row { margin-top: 4px; }
     .ai-st-row .brf-dot { transform: translateY(1px); }
     .ai-st-row .ai-muted { font-size: 0.74rem; }
+    .brf-note .ai-pflicht { display: block; margin-top: 4px; color: #f87171; font-weight: 700; }   /* Wunsch 21.11. */
     .ai-text { font-size: 0.85rem; line-height: 1.55; margin: 8px 0 12px; color: var(--text); }
     .ai-text.ai-small { font-size: 0.78rem; color: var(--text-muted); margin: 8px 0 0; }
     .ai-muted { color: var(--text-muted); font-weight: 400; }
@@ -1335,6 +1336,7 @@
       <div id="ai-modal-content"></div>
       <div class="brf-note">
         <strong>KI-generiert, ohne Gewähr.</strong> Automatische Einschätzung aus Webcam-Bildern, Messwerten und Modellprognose (Claude von Anthropic); sie kann falsch oder überholt sein. Massgebend sind die offizielle Flugwetterberatung (DWD, MeteoSchweiz), AIP, NOTAM und DABS, die Flugleitung am Platz und die eigene Beobachtung.
+        <span class="ai-pflicht">Diese Information ersetzt keine Flugplanung.</span>
       </div>
     </div>
   </div>
@@ -1717,7 +1719,8 @@
     var AI_SLOTS = ['07:30', '11:00', '14:30'], AI_SLOT_MIN_AFTER_SUNRISE = 20;
     // Deutsche Schreibweise für EDSF (Wunsch 16.11.): Höhen «1.400 m»; wie DE_M_RE in ai_briefing.py, ohne Lookbehind (ältere Safari)
     var AI_DE_M = /(^|[^\d.,:'’])([1-9]\d?)[.'’]?(\d{3})(?=(?:\s*(?:–|-|bis|und|\/)\s*\d{1,2}[.'’]?\d{3})*\s*(?:m|Metern?|ft)(?![A-Za-zÄÖÜäöü\d]))/g;
-    function aiDe(s) { return String(s == null ? '' : s).replace(AI_DE_M, '$1$2.$3'); }
+    // dazu «in Wolken» statt «in Wolke» (Wunsch 21.11.; der Job korrigiert neue Briefings selbst, das hier gilt für ältere)
+    function aiDe(s) { return String(s == null ? '' : s).replace(AI_DE_M, '$1$2.$3').replace(/\b([Ii]n) Wolke(?![A-Za-zÄÖÜäöüß])/g, '$1 Wolken'); }
     // seitenweit genutzt (Titel, Wetter-Panel, Thermik-Karte, KI-Fenster): Ganzzahl mit Tausenderpunkt, 2885 -> «2.885»
     function aiThousands(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
     // Höhenbänder aus DABS/dipul («5000FT AMSL», «2300 ft MSL»): nur Zahlen direkt vor FT/M
@@ -1736,7 +1739,7 @@
     var AI_LAGE = {
       gut:      { label: 'gut',      color: '#10b981' },
       maessig:  { label: 'mässig',   color: '#f59e0b' },
-      schlecht: { label: 'schlecht', color: '#ef4444' }
+      schlecht: { label: 'Nicht fliegbar', color: '#ef4444' }   // Wunsch 21.11.: «Flugwetter: Nicht fliegbar» statt «schlecht»
     };
     var AI_TH_STUFE = { gut: '#10b981', maessig: '#f59e0b', keine: '#64748b' };
     var AI_MAPS = {
@@ -1842,7 +1845,7 @@
       } else {
         if (st.kind === 'ok') {
           time = aiSlotHM(st.data, st.gen);
-          if (st.lage) { dot.style.background = AI_LAGE[st.lage].color; label += ', Flugwetter ' + AI_LAGE[st.lage].label; }
+          if (st.lage) { dot.style.background = AI_LAGE[st.lage].color; label += ', Flugwetter ' + AI_LAGE[st.lage].label.toLowerCase(); }
         } else {
           time = aiSlotWhen(st.data, st.gen, now);
           dot.classList.add('stale');
@@ -1926,7 +1929,9 @@
       var tag = /^\d{4}-\d{2}-\d{2}$/.test(aiStr(x.datum)) ? aiDate(x.datum + 'T12:00:00+00:00') : null;
       if (x.ok !== true || !stand || !tag) return html + '<div class="ai-row">DABS nicht auswertbar – bitte das Original öffnen.</div>';
       if (aiDay(tag) !== aiDay(now)) return html + '<div class="ai-row">Der Auszug ist nicht von heute und wird nicht mehr angezeigt.</div>';
+      html += aiDabsKopf(x, tag, stand);
       var hits = Array.isArray(x.treffer) ? x.treffer.filter(aiObj) : [];
+      var total = (typeof x.eintraege_total === 'number' && isFinite(x.eintraege_total)) ? x.eintraege_total : null;
       var nDone = 0;
       hits.forEach(function (t) {
         var done = t.beendet === true;         // heute schon vorbei: grau, damit die Liste zur DABS-Karte passt (wie LSZK)
@@ -1941,15 +1946,30 @@
           '<br>' + escHtml(aiStr(t.text)) +
           (t.karte === false ? ' <span class="ai-muted">· nicht auf der DABS-Karte</span>' : '') + '</div>';
       });
-      if (!hits.length) html += '<div class="ai-row">Keine DABS-Einträge im Filter.</div>';
+      var leer = x.leer === true && total === 0 && !hits.length;   // nur wenn das DABS selbst «no planned activities» meldet
+      if (leer) html += AI_DABS_LEER;
+      else if (!hits.length) html += '<div class="ai-row">Keine DABS-Einträge im Filter.</div>';
       else if (nDone === hits.length) html += '<div class="ai-row">Keine weiteren DABS-Einträge im Filter.</div>';
-      var ver = (typeof x.version === 'number' && isFinite(x.version)) ? 'Version ' + x.version + ', ' : '';
-      var tot = (typeof x.eintraege_total === 'number' && isFinite(x.eintraege_total))
-        ? ' · ' + hits.length + ' von ' + x.eintraege_total + ' Einträgen' + (nDone ? ' (' + nDone + ' beendet)' : '') : '';
-      return html + '<div class="brf-src">Stand ' + ver + aiDM(stand) + ' ' + aiHM(stand) + ' LT' + tot +
-        (aiStr(x.filter) ? ' · ' + escHtml(x.filter) : '') + ' · neue Versionen um 09:00, 13:00 und 16:00 LT · LT = Lokalzeit · ' +
-        '<a href="https://www.skybriefing.com/o/dabs?today" target="_blank" rel="noopener noreferrer">Original-DABS (PDF)</a></div>';
+      var src = [];                            // Version und Ausgabe stehen seit 21.11. im Kopf (aiDabsKopf)
+      if (total !== null && total > 0) src.push(hits.length + ' von ' + total + ' Einträgen' + (nDone ? ' (' + nDone + ' beendet)' : ''));
+      if (aiStr(x.filter) && !leer) src.push(escHtml(x.filter));
+      src.push('neue Versionen um 09:00, 13:00 und 16:00 LT', 'LT = Lokalzeit',
+        '<a href="https://www.skybriefing.com/o/dabs?today" target="_blank" rel="noopener noreferrer">Original-DABS (PDF)</a>');
+      return html + '<div class="brf-src">' + src.join(' · ') + '</div>';
     }
+    // Kopf des DABS-Auszugs (Wunsch 21.11., wie LSZK): für welchen Tag er gilt und wann die Version herauskam. Version 1
+    // eines Tages erscheint am Vortag, gilt aber für den Tag selbst. Der Auszug erscheint nur am eigenen Tag, darum «heute».
+    var AI_WT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+    function aiDabsKopf(x, tag, stand) {
+      var vortag = aiDay(new Date(tag.getTime() - 86400000)), sd = aiDay(stand);
+      var aus = sd === x.datum ? aiHM(stand) + ' LT'
+        : (sd === vortag ? 'am Vortag (' + aiDM(stand) + ' ' + aiHM(stand) + ' LT)' : aiDM(stand) + ' ' + aiHM(stand) + ' LT');
+      var ver = (typeof x.version === 'number' && isFinite(x.version)) ? 'Version ' + x.version + ', ' : '';
+      return '<div class="ai-row"><b>Gültig für heute, ' + AI_WT[tag.getUTCDay()] + ' ' + aiDM(tag) + '</b> · ' + ver + 'herausgegeben ' + aus + '</div>';
+    }
+    // leeres DABS (keine Einträge, Wunsch 21.11.): «heisst für uns keine Einschränkung aufgrund des DABS»
+    var AI_DABS_LEER = '<div class="ai-status" style="border-left-color:#10b981"><div class="ai-st-row">' +
+      '<span class="brf-dot" style="background:#10b981"></span><span>Keine Einträge im DABS – keine Einschränkung durch das DABS.</span></div></div>';
     // ED-R 132 Heuberg (Wunsch 16.11.): Auszüge vom Programm – A aus der Schiesswarnung der Gemeinde Stetten a. k. M.,
     // B aus XContest (NOTAM). Nie «frei» oder «inaktiv»; nur von heute.
     var HB_LINKS = {
@@ -1974,7 +1994,8 @@
       if (!a || a.ok !== true) return { txt: 'nicht auswertbar', lvl: 0 };
       var ah = aiObj(a.heute), nowHM = aiHM(now), r;
       if (!ah || ah.datum !== aiDay(now)) return { txt: 'für heute keine Meldung', lvl: 0 };
-      if (ah.kein_schiessen === true) r = { txt: 'nicht aktiv gemeldet (kein Schiessen)', lvl: 0, nichtAktiv: ah.unsicher === false };
+      // nur ob das Gebiet aktiv ist, nichts zum Schiessen (Wunsch 21.11.)
+      if (ah.kein_schiessen === true) r = { txt: 'nicht aktiv gemeldet', lvl: 0, nichtAktiv: ah.unsicher === false };
       else if (aiHmOk(ah.von) && aiHmOk(ah.bis) && ah.von < ah.bis) {
         if (nowHM < ah.von) r = { txt: 'aktiv ab ' + ah.von + ' (bis ' + ah.bis + ')', lvl: 1 };
         else if (nowHM < ah.bis) r = { txt: 'aktiv bis ' + ah.bis, lvl: 2 };
@@ -2047,9 +2068,10 @@
           (hb.b.next ? ' <span class="ai-muted">· nächste Aktivierung ' + escHtml(hb.b.next) + '</span>' : '') + '</div>';
       }
       return html +
+        // Fokus Flugbriefing (Wunsch 21.11.): nichts zum Schiessen, nur der Link zu den Schiesswarnungen bleibt
         '<div class="brf-src">Inoffiziell' + (hb ? ', Stand ' + aiHM(hb.abg) : '') +
-        ': A aus der Schiesswarnung, B aus NOTAM laut XContest. Höhen und kurzfristige Änderungen nur im AUP/UUP und NOTAM (massgebend). ' +
-        'Quellen: <a href="' + HB_LINKS.a + '" target="_blank" rel="noopener noreferrer">Schiesswarnungen Stetten a. k. M.</a> · ' +
+        '. Höhen und kurzfristige Änderungen nur im AUP/UUP und NOTAM (massgebend). ' +
+        'Quellen: <a href="' + HB_LINKS.a + '" target="_blank" rel="noopener noreferrer">Schiesswarnungen Heuberg</a> · ' +
         '<a href="' + HB_LINKS.xc + '" target="_blank" rel="noopener noreferrer">XContest Airspace</a> · ' +
         'sichtflug.app <a href="' + HB_LINKS.sa + '" target="_blank" rel="noopener noreferrer">132 A</a> / ' +
         '<a href="' + HB_LINKS.sb + '" target="_blank" rel="noopener noreferrer">132 B</a> · ' +

@@ -250,11 +250,14 @@ function hit(over) {
 }
 const rows = (html) => [...html.matchAll(/<div class="(ai-row[^"]*)">(.*?)<\/div>/g)].map((m) => [m[1], m[2]]);
 const srcLine = (html) => /<div class="brf-src">(.*?)<\/div>$/.exec(html)[1];
+// Kopfzeile seit 21.11.: Tag, für den das DABS gilt, Version und Ausgabe (Version 2 vom 20.11. 08:45 LT)
+const KOPF = ['ai-row', '<b>Gültig für heute, Fr 20.11.</b> · Version 2, herausgegeben 08:45 LT'];
 
-test('DABS: Zeiten mit «LT», Stand mit «LT», «LT = Lokalzeit» (wie LSZK f1c0369)', () => {
+test('DABS: Zeiten mit «LT», Kopf mit Gültigkeitstag und Ausgabe, «LT = Lokalzeit» (wie LSZK f1c0369)', () => {
   const html = aiDabsHtml(dabs([hit(), hit({ zeit: '09:00–10:00 LT' }), hit({ zeit: '0730 UTC' }), hit({ zeit: 'Zeit unlesbar' }),
     hit({ zeit: '22:00–02:00 (+1)' }), hit({ zeit: '08:00–09:00, 14:00–15:00' })]), DNOW);
-  const r = rows(html);
+  assert.deepEqual(rows(html)[0], KOPF);
+  const r = rows(html).slice(1);
   assert.ok(r[0][1].includes('</b> 14:00–16:00 LT · '), r[0][1]);
   assert.ok(r[1][1].includes('</b> 09:00–10:00 LT · '), 'kein doppeltes LT: ' + r[1][1]);
   assert.ok(r[2][1].includes('</b> 0730 UTC · '), 'UTC bleibt UTC');
@@ -262,7 +265,8 @@ test('DABS: Zeiten mit «LT», Stand mit «LT», «LT = Lokalzeit» (wie LSZK f1
   assert.ok(r[4][1].includes('</b> 22:00–02:00 (+1) LT · '), r[4][1]);
   assert.ok(r[5][1].includes('</b> 08:00–09:00, 14:00–15:00 LT · '), r[5][1]);
   const s = srcLine(html);
-  assert.ok(s.startsWith('Stand Version 2, 20.11. 08:45 LT · 6 von 9 Einträgen · Fluggebiet'), s);
+  assert.ok(s.startsWith('6 von 9 Einträgen · Fluggebiet'), s);
+  assert.ok(!s.includes('Stand'), 'Version und Ausgabe stehen im Kopf, nicht mehr in der Fusszeile: ' + s);
   assert.ok(s.includes(' · neue Versionen um 09:00, 13:00 und 16:00 LT · LT = Lokalzeit · <a href="https://www.skybriefing.com/o/dabs?today"'), s);
   assert.ok(!html.includes('(Zeiten in Lokalzeit)'));
 });
@@ -270,24 +274,26 @@ test('DABS: Zeiten mit «LT», Stand mit «LT», «LT = Lokalzeit» (wie LSZK f1
 test('DABS: beendete Einträge grau mit «· beendet», Zähler «(n beendet)», «Keine weiteren …» wenn nur beendete (wie LSZK aea4b85)', () => {
   let html = aiDabsHtml(dabs([hit(), hit({ gebiet: 'LS-D3', zeit: '08:00–09:00 LT', beendet: true })]), DNOW);
   let r = rows(html);
-  assert.deepEqual(r.map((x) => x[0]), ['ai-row', 'ai-row ai-done']);
-  assert.ok(r[1][1].startsWith('<b>LS-D3 · W1234/26</b> 08:00–09:00 LT · beendet · 1.500m MSL bis FL130'), r[1][1]);
-  assert.ok(!r[0][1].includes('beendet'));
-  assert.ok(srcLine(html).includes(' · 2 von 9 Einträgen (1 beendet) · '), srcLine(html));
+  assert.deepEqual(r.map((x) => x[0]), ['ai-row', 'ai-row', 'ai-row ai-done']);
+  assert.deepEqual(r[0], KOPF);
+  assert.ok(r[2][1].startsWith('<b>LS-D3 · W1234/26</b> 08:00–09:00 LT · beendet · 1.500m MSL bis FL130'), r[2][1]);
+  assert.ok(!r[1][1].includes('beendet'));
+  assert.ok(srcLine(html).startsWith('2 von 9 Einträgen (1 beendet) · '), srcLine(html));
   assert.ok(!html.includes('Keine weiteren'));
   // nur beendete: Zeile «Keine weiteren DABS-Einträge im Filter.» nach der Liste
   html = aiDabsHtml(dabs([hit({ beendet: true, zeit: '07:00–08:00' }), hit({ beendet: true })]), DNOW);
   r = rows(html);
-  assert.deepEqual(r.map((x) => x[0]), ['ai-row ai-done', 'ai-row ai-done', 'ai-row']);
-  assert.equal(r[2][1], 'Keine weiteren DABS-Einträge im Filter.');
-  assert.ok(srcLine(html).includes(' · 2 von 9 Einträgen (2 beendet) · '));
-  // keine Treffer: wie bisher
+  assert.deepEqual(r.map((x) => x[0]), ['ai-row', 'ai-row ai-done', 'ai-row ai-done', 'ai-row']);
+  assert.equal(r[3][1], 'Keine weiteren DABS-Einträge im Filter.');
+  assert.ok(srcLine(html).startsWith('2 von 9 Einträgen (2 beendet) · '));
+  // keine Treffer, aber Einträge anderswo: wie bisher, nicht «DABS leer»
   html = aiDabsHtml(dabs([]), DNOW);
-  assert.deepEqual(rows(html), [['ai-row', 'Keine DABS-Einträge im Filter.']]);
-  assert.ok(srcLine(html).includes(' · 0 von 9 Einträgen · '));
+  assert.deepEqual(rows(html), [KOPF, ['ai-row', 'Keine DABS-Einträge im Filter.']]);
+  assert.ok(srcLine(html).startsWith('0 von 9 Einträgen · '));
+  assert.ok(!html.includes('Keine Einträge im DABS'));
   // nur true zählt als beendet
   html = aiDabsHtml(dabs([hit({ beendet: 'true' }), hit({ beendet: 1 })]), DNOW);
-  assert.deepEqual(rows(html).map((x) => x[0]), ['ai-row', 'ai-row']);
+  assert.deepEqual(rows(html).map((x) => x[0]), ['ai-row', 'ai-row', 'ai-row']);
   assert.ok(!html.includes('beendet'));
   // ohne eintraege_total kein Zähler, auch nicht «beendet»
   html = aiDabsHtml(dabs([hit({ beendet: true })], { eintraege_total: undefined }), DNOW);
@@ -298,6 +304,88 @@ test('DABS: beendete Einträge grau mit «· beendet», Zähler «(n beendet)»,
   // nicht auswertbar und nicht von heute wie bisher
   assert.ok(aiDabsHtml(dabs([hit()], { ok: false }), DNOW).includes('DABS nicht auswertbar'));
   assert.ok(aiDabsHtml(dabs([hit()], { datum: '2026-11-19' }), DNOW).includes('nicht von heute'));
+});
+
+/* ── 21.11.2026: Gültigkeitstag, leeres DABS, Heuberg ohne Schiessen, «Nicht fliegbar», «in Wolken», Pflichthinweis ── */
+const LEER = '<div class="ai-status" style="border-left-color:#10b981"><div class="ai-st-row"><span class="brf-dot" style="background:#10b981">' +
+  '</span><span>Keine Einträge im DABS – keine Einschränkung durch das DABS.</span></div></div>';
+
+test('DABS leer (0 Einträge): Kopf, grüne Zeile «keine Einschränkung durch das DABS», Fusszeile ohne Zähler und Filter', () => {
+  // wie am 21.11.: Version 1 vom Vortag, beide Abschnitte «There are no planned activities»
+  const v1 = { datum: '2026-11-20', version: 1, stand_utc: '2026-11-19T14:31:00+00:00', eintraege_total: 0, leer: true };
+  const html = aiDabsHtml(dabs([], v1), DNOW);
+  assert.deepEqual(rows(html), [['ai-row', '<b>Gültig für heute, Fr 20.11.</b> · Version 1, herausgegeben am Vortag (19.11. 15:31 LT)']]);
+  assert.equal(html.split(LEER).length - 1, 1, html);
+  assert.equal(srcLine(html), 'neue Versionen um 09:00, 13:00 und 16:00 LT · LT = Lokalzeit · ' +
+    '<a href="https://www.skybriefing.com/o/dabs?today" target="_blank" rel="noopener noreferrer">Original-DABS (PDF)</a>');
+  assert.ok(!html.includes('Keine DABS-Einträge im Filter') && !html.includes('0 von 0'));
+  // dieselbe Version am selben Tag ausgegeben: nur die Uhrzeit
+  assert.ok(aiDabsHtml(dabs([], { eintraege_total: 0 }), DNOW).includes('<b>Gültig für heute, Fr 20.11.</b> · Version 2, herausgegeben 08:45 LT</div>'));
+  // 0 Einträge, aber Treffer im Datensatz (widersprüchlich): die Treffer zählen, keine grüne Zeile
+  const w = aiDabsHtml(dabs([hit()], { eintraege_total: 0 }), DNOW);
+  assert.ok(!w.includes('Keine Einträge im DABS') && w.includes('<b>LS-R7 · W1234/26</b>'), w);
+  // ohne Zahl (älterer Datensatz, Text, null): nie «leer»
+  [undefined, null, '0', NaN].forEach((t) => assert.ok(!aiDabsHtml(dabs([], { eintraege_total: t, leer: true }), DNOW).includes('Keine Einträge im DABS'), String(t)));
+  // «keine Einschränkung» nur, wenn das DABS selbst leer meldet (leer === true vom Job, Befund 1 des Prüfers):
+  // 0 Einträge ohne diese Meldung oder leer als Text/Zahl -> neutrale Zeile wie bisher
+  [{}, { leer: false }, { leer: 'true' }, { leer: 1 }].forEach((o) => {
+    const h = aiDabsHtml(dabs([], Object.assign({ eintraege_total: 0 }, o)), DNOW);
+    assert.ok(!h.includes('Keine Einträge im DABS') && h.includes('Keine DABS-Einträge im Filter.'), JSON.stringify(o) + ' ' + h);
+  });
+  // Filtertext maskiert
+  const f = aiDabsHtml(dabs([], { filter: '<img src=x onerror=alert(1)>' }), DNOW);
+  assert.ok(!f.includes('<img') && f.includes('&lt;img src=x onerror=alert(1)&gt;'), f);
+  // nicht auswertbar oder nicht von heute: weder Kopf noch grüne Zeile
+  [{ ok: false }, { datum: '2026-11-19' }, { stand_utc: 'kaputt' }].forEach((o) => {
+    const h = aiDabsHtml(dabs([], Object.assign({ eintraege_total: 0 }, o)), DNOW);
+    assert.ok(!h.includes('Gültig für') && !h.includes('Keine Einträge im DABS'), JSON.stringify(o) + ' ' + h);
+  });
+});
+
+test('DABS-Kopf: Wochentag, Vortag, älter, ohne Version; Sommerzeit', () => {
+  const kopf = (over, now) => rows(aiDabsHtml(dabs([hit()], over), now || DNOW))[0][1];
+  assert.equal(kopf({ stand_utc: '2026-11-18T14:31:00+00:00', version: 1 }), '<b>Gültig für heute, Fr 20.11.</b> · Version 1, herausgegeben 18.11. 15:31 LT');
+  assert.equal(kopf({ version: undefined }), '<b>Gültig für heute, Fr 20.11.</b> · herausgegeben 08:45 LT');
+  assert.equal(kopf({ version: 'x' }), '<b>Gültig für heute, Fr 20.11.</b> · herausgegeben 08:45 LT');
+  // Sonntag 22.11., Version 1 am Samstag 15:45 LT
+  assert.equal(kopf({ datum: '2026-11-22', version: 1, stand_utc: '2026-11-21T14:45:00+00:00' }, new Date(Date.UTC(2026, 10, 22, 7, 0))),
+    '<b>Gültig für heute, So 22.11.</b> · Version 1, herausgegeben am Vortag (21.11. 15:45 LT)');
+  // Sommerzeit: Montag 1.6.2026, Version 1 am 31.5. 15:40 LT (13:40 UTC)
+  assert.equal(kopf({ datum: '2026-06-01', version: 1, stand_utc: '2026-05-31T13:40:00+00:00' }, new Date(Date.UTC(2026, 5, 1, 4, 30))),
+    '<b>Gültig für heute, Mo 01.06.</b> · Version 1, herausgegeben am Vortag (31.05. 15:40 LT)');
+});
+
+test('Heuberg: nur aktiv / nicht aktiv, nichts zum Schiessen; Link zu den Schiesswarnungen bleibt', () => {
+  const aiHbA = new Function(AI_CODE + cut('    function aiHmOk(s)', '    function aiHbB(b, now)') + '\nreturn aiHbA;')();
+  const a = (heute) => aiHbA({ ok: true, heute }, DNOW);
+  assert.deepEqual(a({ datum: '2026-11-20', kein_schiessen: true, unsicher: false }), { txt: 'nicht aktiv gemeldet', lvl: 0, nichtAktiv: true });
+  assert.equal(a({ datum: '2026-11-20', kein_schiessen: true, unsicher: true }).txt, 'nicht aktiv gemeldet (Angabe unsicher)');
+  assert.equal(a({ datum: '2026-11-20', von: '12:00', bis: '16:00', unsicher: false }).txt, 'aktiv ab 12:00 (bis 16:00)');
+  // ausser Kommentaren, der Adresse, dem Feldnamen und dem Linktext kommt «Schiess…» nirgends mehr vor
+  const ohne = SRC.replace(/(^|\s)\/\/ [^\n]*/g, '$1').replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace("'https://www.stetten-akm.de/gemeinde/stetten-und-bundeswehr/aktuelle-schiesswarnungen'", '')
+    .replace('ah.kein_schiessen', '').replace('>Schiesswarnungen Heuberg</a>', '');
+  assert.ok(!/schiess/i.test(ohne), 'sichtbarer Text zum Schiessen: ' + (/.{60}schiess.{30}/i.exec(ohne) || [''])[0]);
+  assert.ok(SRC.includes("'Quellen: <a href=\"' + HB_LINKS.a + '\" target=\"_blank\" rel=\"noopener noreferrer\">Schiesswarnungen Heuberg</a> · ' +"));
+  assert.ok(SRC.includes("a: 'https://www.stetten-akm.de/gemeinde/stetten-und-bundeswehr/aktuelle-schiesswarnungen',"));
+  assert.ok(!SRC.includes('A aus der Schiesswarnung, B aus NOTAM') && !SRC.includes('(kein Schiessen)'));
+});
+
+test('«Flugwetter: Nicht fliegbar» statt «schlecht»; Anzeige «in Wolken»; roter Hinweis «ersetzt keine Flugplanung»', () => {
+  assert.ok(SRC.includes("schlecht: { label: 'Nicht fliegbar', color: '#ef4444' }"));
+  assert.ok(SRC.includes("'<span>Flugwetter: ' + (lg ? lg.label : '–') + '</span>"));
+  // Tooltip/Screenreader im Satz klein: «Briefing, Flugwetter nicht fliegbar, Stand …»
+  assert.ok(SRC.includes("label += ', Flugwetter ' + AI_LAGE[st.lage].label.toLowerCase();"));
+  assert.ok(!SRC.includes("label: 'schlecht'"));
+  const aiDe = new Function(cut('    var AI_DE_M = ', '    // seitenweit genutzt') + '\nreturn aiDe;')();
+  [['Platz in Wolke, Basis um 880 m MSL.', 'Platz in Wolken, Basis um 880 m MSL.'],
+   ['In Wolke, Hornberg nicht erkennbar.', 'In Wolken, Hornberg nicht erkennbar.'],
+   ['Passwang in Wolke', 'Passwang in Wolken'], ['Belchen in Wolken.', 'Belchen in Wolken.'],
+   ['Kamera in der Wolke.', 'Kamera in der Wolke.'], ['in Wolkendecke', 'in Wolkendecke'], ['Basis 1150 m MSL', 'Basis 1.150 m MSL']
+  ].forEach(([i, o]) => assert.equal(aiDe(i), o));
+  const note = /<div class="brf-note">\s*<strong>KI-generiert[\s\S]*?<\/div>/.exec(SRC)[0];   // Fuss des KI-Fensters
+  assert.ok(/<\/strong>[^<]*eigene Beobachtung\.\s*<span class="ai-pflicht">Diese Information ersetzt keine Flugplanung\.<\/span>\s*<\/div>$/.test(note), note);
+  assert.ok(SRC.includes('.brf-note .ai-pflicht { display: block; margin-top: 4px; color: #f87171; font-weight: 700; }'));
 });
 
 /* ── Kopfknopf, Einbindung, unveränderte Teile ── */

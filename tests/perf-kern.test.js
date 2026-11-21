@@ -97,8 +97,8 @@ function run(ac, af, input) {
 
 /* ── Export und Browsercode ─────────────────────────────────── */
 
-test('Export: VERSION 10, Node module.exports, im Browser window.PerfCore gleich window.LszkPerfCore', () => {
-  assert.equal(core.VERSION, 10);
+test('Export: VERSION 11, Node module.exports, im Browser window.PerfCore gleich window.LszkPerfCore', () => {
+  assert.equal(core.VERSION, 11);
   assert.equal(core.SCHEMA, 2);
   assert.deepEqual(core.SCHEMAS, [2, 3]);
   assert.equal(core.SCHEMA_EXT, 3);
@@ -113,7 +113,7 @@ test('Export: VERSION 10, Node module.exports, im Browser window.PerfCore gleich
   vm.runInContext(fs.readFileSync(CORE_PATH, 'utf8'), sandbox);
   assert.ok(sandbox.PerfCore && typeof sandbox.PerfCore.compute === 'function');
   assert.equal(sandbox.PerfCore, sandbox.LszkPerfCore);
-  assert.equal(sandbox.PerfCore.VERSION, 10);
+  assert.equal(sandbox.PerfCore.VERSION, 11);
 });
 
 test('Browsercode: ES5 ohne ?., ??, Lookbehind, Pfeilfunktionen, let/const, Template-Strings und ohne BOM', () => {

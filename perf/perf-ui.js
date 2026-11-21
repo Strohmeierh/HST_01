@@ -29,6 +29,8 @@
    Rechnung, Kurzzeile, Farben und Zustände unverändert.
    VERSION 10: Ablesung im Rechenweg als Tabellenausschnitt wie im AFM (Wunsch des Benutzers vom 21.11.2026, Variante A):
    die Eingabe blau als Zeile bzw. Spalte zwischen den zwei Tabellenwerten, im Schnittpunkt fett der Wert dafür.
+   VERSION 11 (Wünsche des Benutzers vom 21.11.2026): Std als erklärender Satz über dem Ausschnitt (Variante C); «≈» auch bei
+   Werten, die erst ab der achten Nachkommastelle von vier Stellen abweichen (Gewichtszeilen).
    Browser: window.EdsfPerf = { update, version, _tick }. Node: reine Funktionen für die Tests.
    VERSION gleich dem ?v= in index.html und in perf/perf.js halten.
    Browsercode in ES2015, ohne Optional Chaining, Nullish Coalescing und Lookbehind. */
@@ -41,7 +43,7 @@
 }(typeof self !== 'undefined' ? self : this, function (core) {
   'use strict';
 
-  var VERSION = 10;
+  var VERSION = 11;
 
   var STALE_MIN = 45;          // Messwerte älter: keine Zahlen
   var FUTURE_MIN = 5;          // Messzeit weiter in der Zukunft: keine Zahlen
@@ -346,9 +348,11 @@
   // Zwischenwert im Rechenweg: exakt, höchstens vier Nachkommastellen, ohne nachgestellte Nullen; das Runden auf
   // 0,0001 entfernt nur Gleitkommareste. Ist ein Wert so nicht exakt darstellbar (Interpolation, z. B. Gewicht
   // 9/23), steht «≈» davor und er erscheint auf zwei Nachkommastellen gerundet.
+  // Als Gleitkommarest gilt höchstens 1e-10 (VERSION 11; vorher 1e-7, da galt z. B. 380,84800008 aus der Interpolation
+  // im Gewicht als exakt «380,848»). Die Reste der Rechnung liegen bei diesen Grössen unter etwa 3e-11.
   function fmtExact(x) {
     var s = x * 10000, r = Math.round(s);
-    if (Math.abs(s - r) > 1e-3) return '≈' + fmtTrim(Math.round(x * 100) / 100, 2);
+    if (Math.abs(s - r) > 1e-6) return '≈' + fmtTrim(Math.round(x * 100) / 100, 2);
     return fmtTrim(r / 10000, 4);
   }
 
@@ -981,9 +985,6 @@
     return 'table';
   }
 
-  // Zahl mit Vorzeichen: «+0,1072», «−2,4»
-  function fmtSigned(x) { return (x > 0 ? '+' : '') + fmtExact(x); }
-
   // Wert einer Achse: «2.000 ft», «906 m», «20 °C», «10 kt»; die Temperaturabweichung wie im AFM gedruckt: «Std»,
   // «Std+20 °C», «Std−20 °C»
   function axisValueText(a, v) {
@@ -1112,16 +1113,26 @@
     return h + stepRow(p0 + label, lk.values, u, up);
   }
 
-  // Standardtemperatur der Tabelle (E3) und Abweichung, vor der Ablesung:
-  // «Std bei 2.972 ft: 5,4896 °C (7 bis −1 °C) · Abweichung −0,7896 °C»
+  // Standardtemperatur der Tabelle (E3) und Abweichung, vor der Ablesung, als erklärender Satz (VERSION 11, Wunsch des
+  // Benutzers vom 21.11.2026, Variante C; die Tabelle selbst bleibt mit «Std−20 °C», «Std−1,9672 °C», «Std» wie im AFM):
+  // «Std = Standardtemperatur laut AFM: 7 °C auf 2.500 ft, −1 °C auf 5.000 ft, auf 2.729 ft 6,2672 °C. Die gemessenen
+  // 4,3 °C liegen 1,9672 °C darunter.» Genau auf einer Höhenzeile bzw. unter der tiefsten nur deren Std. Zahlen exakt wie
+  // im Spaltenkopf des Ausschnitts; nur unter Std−20 °C nennt der Satz die tatsächliche Abweichung, während die Spalte
+  // «Std−20 °C» bleibt (unter der Tabelle gilt der kleinste Wert).
   function stdRow(lk) {
     var src = lk.mass ? lk.mass.upper : lk, a = null;
     (src.axes || []).forEach(function (x) { if (x.quantity === 'temperatureDeviation' && x.std) a = x; });
     if (!a) return '';
     var s = a.std, pu = UNIT_LABEL[s.unit] || 'ft';
-    var how = s.interpolated ? ' (' + fmtExact(s.lowerStdC) + ' bis ' + fmtExact(s.upperStdC) + '&nbsp;°C)' : '';
-    return noteRow('Std bei ' + fmtExact(s.pressureAltitude) + '&nbsp;' + pu + ': ' + fmtExact(s.stdTempC) + '&nbsp;°C' + how +
-      ' · Abweichung ' + fmtSigned(a.input) + '&nbsp;°C');
+    function deg(v) { return fmtExact(v) + '&nbsp;°C'; }
+    function alt(v) { return fmtExact(v) + '&nbsp;' + pu; }
+    var std = s.interpolated
+      ? deg(s.lowerStdC) + ' auf ' + alt(s.lower) + ', ' + deg(s.upperStdC) + ' auf ' + alt(s.upper) + ', auf ' +
+        alt(s.pressureAltitude) + ' ' + deg(s.stdTempC)
+      : deg(s.stdTempC) + ' auf ' + alt(s.value);
+    var dev = a.input;
+    var rel = dev === 0 ? 'entsprechen genau Std' : 'liegen ' + deg(Math.abs(dev)) + (dev < 0 ? ' darunter' : ' darüber');
+    return noteRow('Std = Standardtemperatur laut AFM: ' + std + '. Die gemessenen ' + fmtDec(s.tempC, 1) + '&nbsp;°C ' + rel + '.');
   }
 
   // Zeile eines Schritts: Beschriftung, Rollstrecke, Strecke über 15 m; cls: Klasse der Zeile (Faustregel)

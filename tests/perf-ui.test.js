@@ -1,4 +1,4 @@
-// Anzeigetests für den Start-/Landestreckenrechner EDSF (perf/perf-ui.js VERSION 10 mit kurzen Kartentexten und Tabellenausschnitt im Rechenweg, Fork der LSZK-Anzeige VERSION 7):
+// Anzeigetests für den Start-/Landestreckenrechner EDSF (perf/perf-ui.js VERSION 11 mit kurzen Kartentexten, Tabellenausschnitt und Std-Erklärzeile im Rechenweg, Fork der LSZK-Anzeige VERSION 7):
 // Adapter für window.EDSF_WX, Nässe nur bei Regen laut Station EDSF, Kartentexte je Muster mit den neuen Kernstufen
 // (Druckhöhe in m, Standardtemperatur der Tabelle, Gegenwind in der Tabelle bzw. als Faktortabelle, Belag je Strecke,
 // Faustregel, Landung nach Gewicht, Landung fehlt im AFM), Gewichtsfeld, Fehlertexte und der Browserteil boot().
@@ -318,7 +318,8 @@ test('Robin DR400: Rechenweg kurz – Std, Ausschnitt mit Std-Spalten, Faktortab
   assert.ok(d.includes('interpoliert ≈260,67 m ≈512,29 m Gegenwind 10 kt 13 kt 20 kt Faktor 0,85 0,79 0,65 Gegenwind 13 kt × 0,79 (AFM, linear)'), d);
   [
     'Start · AFM S. 5.03 · 1.100 kg',
-    'Std bei 2.974 ft: 5,4832 °C (7 bis −1 °C) · Abweichung +0,1168 °C ' + AFM_LEGEND,
+    'Start · AFM S. 5.03 · 1.100 kg Std = Standardtemperatur laut AFM: 7 °C auf 2.500 ft, −1 °C auf 5.000 ft, auf 2.974 ft 5,4832 °C. ' +
+      'Die gemessenen 5,6 °C liegen 0,1168 °C darüber. ' + AFM_LEGEND,
     'interpoliert ≈260,67 m ≈512,29 m',
     'Gegenwind 13 kt × 0,79 (AFM, linear) ≈205,93 m ≈404,71 m',
     'Gras × 1,15 236,83 m 465,42 m',
@@ -630,6 +631,11 @@ test('Formate wie die EDSF-Seite: Tausenderpunkt, Dezimalkomma, echtes Minus; Fa
   assert.equal(ui.fmtDec(1010, 1), '1.010,0');
   assert.equal(ui.fmtExact(1234.5), '1.234,5');
   assert.equal(ui.fmtExact(2 / 3), '≈0,67');
+  // Grenze für Gleitkommareste 1e-10 (VERSION 11, vorher 1e-7): echte Nachkommastellen ab der achten zählen, Rechenreste nicht.
+  // 8e-10 ist der kleinste echte Abstand in den DR400-Gewichtszeilen (Vollsuche); 1,5e-10 und 3e-11 legen die Grenze eng fest.
+  assert.deepEqual([ui.fmtExact(380.84800008), ui.fmtExact(380.848 + 2e-9), ui.fmtExact(380.848 + 8e-10), ui.fmtExact(380.848 + 1.5e-10),
+    ui.fmtExact(380.848 + 3e-11), ui.fmtExact(0.1 + 0.2), ui.fmtExact(1234.5678 - 4e-11)],
+    ['≈380,85', '≈380,85', '≈380,85', '≈380,85', '380,848', '0,3', '1.234,5678']);
   assert.equal(ui.fmtUp2(236.8211), '236,83');
   assert.equal(ui.fmtFactorExact(1.2974), '1,2974');
   assert.equal(ui.fmtFactorExact(1.1088258), '≈1,1088');
@@ -790,15 +796,59 @@ test('Tabellenausschnitt: jede Zelle gleich der AFM-Tabelle, Grenzen benachbart,
   assert.ok(grids >= 60 && cells >= 200 && xs >= 30 && factors >= 20, [grids, cells, xs, factors].join(' '));
 });
 
+test('Gewichtszeile: Wert mit acht Nachkommastellen mit «≈» (DR400 1.075 kg, QNH 984,2, −15,1 °C, Landung)', () => {
+  // Exakt nachgerechnet (Brüche, nur aus den Flugzeugdaten): 3.688 ft, Std 3,1984 °C, Abweichung −18,2984 °C; über 15 m
+  // mit 1.100 kg 387,86035008, mit 1.000 kg 359,81095008, mit 1.075 kg 380,84800008 m (bis VERSION 10 «380,848»)
+  const h = details(render(wxEdsf({ qnhHpa: 984.2, tempC: -15.1 }), { massText: '1075', detailsOpen: true }));
+  const d = text(h);
+  assert.ok(d.includes('Druckhöhe 3.688 ft = 1.125 m') && d.includes('auf 3.688 ft 3,1984 °C. Die gemessenen −15,1 °C liegen 18,2984 °C darunter.'), d);
+  const landing = d.slice(d.indexOf('Landung · AFM'));
+  assert.ok(landing.includes('interpoliert für 1.075 kg ≈163,28 m ≈380,85 m'), landing);
+  assert.ok(!d.includes('380,848'), 'nicht als exakt');
+  // Schnittpunkte der zwei Landetabellen: 167,08115008 / 387,86035008 und 151,879 / 359,81095008
+  assert.deepEqual(afmGrids(h).filter((g) => /^1\.[01]00 kg/.test(g)).slice(2).map((g) => /\*([^*]+)\*/.exec(g)[1]), ['≈167,08/≈387,86', '151,879/≈359,81']);
+});
+
 test('Tabellenausschnitt: Abweichung genau 0 (Std) wird abgelesen, nicht zwischen «Std» und «Std+20» interpoliert', () => {
   // DR400 bei QNH 955,5 (4.500 ft) und 0,6 °C: Std auf 4.500 ft ist 0,6 °C; T − Std wäre ohne Rundung 3,3e-16 bzw. −4,4e-16
   const h = details(render(wxEdsf({ qnhHpa: 955.5, tempC: 0.6 }), { detailsOpen: true }));
-  assert.ok(text(h).includes('Std bei 4.500 ft: 0,6 °C (7 bis −1 °C) · Abweichung 0 °C'), text(h));
+  assert.ok(text(h).includes('Std = Standardtemperatur laut AFM: 7 °C auf 2.500 ft, −1 °C auf 5.000 ft, auf 4.500 ft 0,6 °C. ' +
+    'Die gemessenen 0,6 °C entsprechen genau Std.'), text(h));
   // Std-Spalte direkt: 250 + 2000/2500 · (305 − 250) = 294, 490 + 0,8 · (605 − 490) = 582
   assert.equal(afmGrids(h)[0], ' ‖ [Std] ‖ 2.500 ft: ~250/490 ‖ [4.500 ft]: *294/582* ‖ 5.000 ft: ~305/605');
   const lk = core.compute(DR400, AF, { tempC: 0.6, qnhHpa: 955.5, windDirTrue: 269, windKt: 26 / 1.852, runwayWet: false }).lookups.takeoff;
   const dev = lk.axes.find((a) => a.quantity === 'temperatureDeviation');
   assert.ok(dev && dev.input === 0 && !Object.is(dev.input, -0) && dev.interpolated === false, JSON.stringify(dev));
+});
+
+test('Std-Erklärzeile (Variante C vom 21.11.2026): darüber, darunter, genau Std, genau auf einer Höhenzeile; je Phase vor dem Ausschnitt', () => {
+  const line = (over) => {
+    const h = details(render(wxEdsf(over), { detailsOpen: true }));
+    const m = h.match(/<tr><td class="perf-steps-note" colspan="3">(Std = [^<]*)<\/td><\/tr>/g) || [];
+    return { h, lines: m.map((x) => text(x).trim()) };
+  };
+  // Live-Beispiel des Benutzers: QNH 1018,98 → 2.729 ft; Std 7 − 8 · 229 / 2500 = 6,2672 °C; 4,3 °C liegen 1,9672 °C darunter
+  // (gleiche Zahl wie im Spaltenkopf «Std−1,9672 °C»)
+  const at = line({ qnhHpa: 1018.98, tempC: 4.3 });
+  assert.ok(text(at.h).includes('Druckhöhe 2.729 ft'), text(at.h));
+  const expect = 'Std = Standardtemperatur laut AFM: 7 °C auf 2.500 ft, −1 °C auf 5.000 ft, auf 2.729 ft 6,2672 °C. ' +
+    'Die gemessenen 4,3 °C liegen 1,9672 °C darunter.';
+  assert.deepEqual(at.lines, [expect, expect], 'Start und Landung');
+  assert.ok(text(at.h).includes(expect + ' ' + AFM_LEGEND), 'direkt vor der Legende und dem Ausschnitt');
+  assert.ok(afmGrids(at.h)[0].startsWith(' ‖ Std−20 °C | [Std−1,9672 °C] | Std ‖ 2.500 ft: '), 'gleiche Zahl im Spaltenkopf: ' + afmGrids(at.h)[0]);
+  // genau auf der Höhenzeile 2.500 ft (QNH 1027,43): nur deren Std, Ausschnitt mit einer Zeile
+  let r = line({ qnhHpa: 1027.43, tempC: 3.2 });
+  assert.ok(text(r.h).includes('Druckhöhe 2.500 ft'), text(r.h));
+  assert.deepEqual(r.lines, Array(2).fill('Std = Standardtemperatur laut AFM: 7 °C auf 2.500 ft. Die gemessenen 3,2 °C liegen 3,8 °C darunter.'));
+  assert.equal(afmGrids(r.h)[0], ' ‖ Std−20 °C | [Std−3,8 °C] | Std ‖ [2.500 ft]: ~215/420 | *243,35/476,7* | ~250/490');
+  // knapp über Std (QNH 1027,4 → 2.501 ft; Std 7 − 8 · 1 / 2500 = 6,9968 °C): auch 0,0032 °C ist eine Abweichung, und die
+  // gemessene Temperatur steht wie in den Eingaben mit einer Nachkommastelle («7,0 °C», nicht «7 °C»)
+  r = line({ qnhHpa: 1027.4, tempC: 7 });
+  assert.ok(text(r.h).includes('Druckhöhe 2.501 ft'), text(r.h));
+  assert.deepEqual(r.lines, Array(2).fill('Std = Standardtemperatur laut AFM: 7 °C auf 2.500 ft, −1 °C auf 5.000 ft, auf 2.501 ft 6,9968 °C. ' +
+    'Die gemessenen 7,0 °C liegen 0,0032 °C darüber.'));
+  // Muster ohne Std (Dimona, Arcus, Eurostar): keine solche Zeile
+  [HK36R, ARCUS, EV97].forEach((ac) => assert.ok(!details(render(wxEdsf(), { aircraft: ac, detailsOpen: true })).includes('Std = Standardtemperatur'), ac.id));
 });
 
 test('Tabellenausschnitt: Daten – Zeilen Druckhöhe, Spalten Temperatur bzw. Abweichung, in jeder Tabelle jedes Musters', () => {
@@ -840,8 +890,8 @@ test('Tabellenausschnitt: CSS – eigene Klassen (keine Doppelung mit dem Karten
   assert.ok(css.indexOf('.perf-steps .perf-afm thead th {') > css.indexOf('.perf-steps thead th {'));
 });
 
-test('Version: perf.js, perf-ui.js und index.html stimmen überein (VERSION 10); Kern als PerfCore', () => {
-  assert.equal(ui.VERSION, 10);
+test('Version: perf.js, perf-ui.js und index.html stimmen überein (VERSION 11); Kern als PerfCore', () => {
+  assert.equal(ui.VERSION, 11);
   assert.equal(core.VERSION, ui.VERSION);
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const m1 = html.match(/<script defer src="perf\/perf\.js\?v=(\d+)"><\/script>/);

@@ -33,6 +33,7 @@
    Browser: window.PerfCore (dasselbe Objekt auch als window.LszkPerfCore). Node: module.exports.
    VERSION 10: neu ist die Anzeige (perf-ui.js, Tabellenausschnitt im Rechenweg). In der Rechnung nur: die
    Temperaturabweichung (E3) wird auf 1e-9 °C gerundet, damit genau auf Std auch Std abgelesen wird (ohne Gleitkommarest).
+   VERSION 11: Rechnung unverändert (Anzeige: Std-Erklärzeile, «≈» in den Gewichtszeilen).
    VERSION gleich dem ?v= in index.html und in perf/perf-ui.js halten. */
 (function (root, factory) {
   var api = factory();
@@ -41,7 +42,7 @@
 }(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = 10;
+  var VERSION = 11;
 
   var EPS = 1e-9;
   var FT_M = 0.3048;

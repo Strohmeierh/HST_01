@@ -31,6 +31,8 @@
    Reihenfolge je Phase: Tabelle (Ablesung, Gewicht) → Faustregeln → Gegenwind → Belag → AFM-Faktoren → (ft → m) →
    auf ganze m aufgerundet.
    Browser: window.PerfCore (dasselbe Objekt auch als window.LszkPerfCore). Node: module.exports.
+   VERSION 10: neu ist die Anzeige (perf-ui.js, Tabellenausschnitt im Rechenweg). In der Rechnung nur: die
+   Temperaturabweichung (E3) wird auf 1e-9 °C gerundet, damit genau auf Std auch Std abgelesen wird (ohne Gleitkommarest).
    VERSION gleich dem ?v= in index.html und in perf/perf-ui.js halten. */
 (function (root, factory) {
   var api = factory();
@@ -39,7 +41,7 @@
 }(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = 9;
+  var VERSION = 10;
 
   var EPS = 1e-9;
   var FT_M = 0.3048;
@@ -667,7 +669,10 @@
       var st = stdTempAt(paAx, ax.stdTempC, pa.v);
       if (!st) return { skip: true };
       st.tempC = inputs.temperature;
-      return { v: inputs.temperature - st.stdTempC, std: st };
+      // auf 1e-9 °C gerundet (VERSION 10): T − Std ist sonst genau auf Std ein Gleitkommarest wie 3,3e-16, und es würde
+      // zwischen «Std» und «Std+20» interpoliert statt «Std» abgelesen; −0 wird 0
+      var dev = Math.round((inputs.temperature - st.stdTempC) * 1e9) / 1e9;
+      return { v: dev === 0 ? 0 : dev, std: st };
     }
     return { missing: true };
   }

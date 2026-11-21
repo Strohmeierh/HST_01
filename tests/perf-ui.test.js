@@ -1,4 +1,4 @@
-// Anzeigetests für den Start-/Landestreckenrechner EDSF (perf/perf-ui.js VERSION 9 mit kurzen Kartentexten, Fork der LSZK-Anzeige VERSION 7):
+// Anzeigetests für den Start-/Landestreckenrechner EDSF (perf/perf-ui.js VERSION 10 mit kurzen Kartentexten und Tabellenausschnitt im Rechenweg, Fork der LSZK-Anzeige VERSION 7):
 // Adapter für window.EDSF_WX, Nässe nur bei Regen laut Station EDSF, Kartentexte je Muster mit den neuen Kernstufen
 // (Druckhöhe in m, Standardtemperatur der Tabelle, Gegenwind in der Tabelle bzw. als Faktortabelle, Belag je Strecke,
 // Faustregel, Landung nach Gewicht, Landung fehlt im AFM), Gewichtsfeld, Fehlertexte und der Browserteil boot().
@@ -66,6 +66,45 @@ function assertNoResult(html, label) {
   assert.ok(html.includes('class="perf-foot"'), (label || '') + ': Fusszeile fehlt');
 }
 const has = (html, s) => text(html).includes(s);
+
+/* Tabellenausschnitte des Rechenwegs (VERSION 10) im Kurzformat der unabhängigen Handrechnung
+   (scratchpad/tools/afm-hand.js, 21.11.2026, rechnet mit exakten Brüchen nur aus den Flugzeugdaten):
+   «Kopf ‖ Spalten ‖ Zeile: Zellen ‖ …»; [x] = blaue Linie, *a/b* = Schnittpunkt (fett), ~ = leere blaue Zelle,
+   ~a/b = Tabellenwert auf der blauen Linie, a/b = übriger Tabellenwert (oben Rollstrecke, unten über 15 m).
+   Streng: Kopf, Zeilen und Zellen müssen genau einer dieser Formen entsprechen, dazwischen steht nichts. */
+const AFM_TABLE = /<tr class="perf-steps-afm"><td colspan="3">((?:<table class="perf-afm">[\s\S]*?<\/table>)+)<\/td><\/tr>/g;
+function afmGrids(html) {
+  const out = [];
+  for (const row of html.matchAll(AFM_TABLE)) {
+    const tables = row[1].split('</table>').slice(0, -1);
+    tables.forEach((t) => {
+      const m = /^<table class="perf-afm"><thead><tr><th class="perf-afm-cap" scope="col">([^<]*)<\/th>((?:<th scope="col"(?: class="perf-afm-in")?>[^<]*<\/th>)+)<\/tr><\/thead><tbody>((?:<tr>[\s\S]*?<\/tr>)+)<\/tbody>$/.exec(t);
+      assert.ok(m, 'Ausschnitt: ' + t);
+      const cols = [...m[2].matchAll(/<th scope="col"( class="perf-afm-in")?>([^<]*)<\/th>/g)].map((c) => (c[1] ? '[' + text(c[2]).trim() + ']' : text(c[2]).trim()));
+      const rows = m[3].split('</tr>').slice(0, -1).map((r) => {
+        const rm = /^<tr><th scope="row"( class="perf-afm-in")?>([^<]*)<\/th>((?:<td(?: class="perf-afm-(?:in|x)")?>[^<]*(?:<span class="perf-afm-2">[^<]*<\/span>)?<\/td>)+)$/.exec(r);
+        assert.ok(rm, 'Zeile: ' + r);
+        // Zeile «Faktor» der Gegenwind-Faktortabelle: je Zelle ein Wert; sonst je Zelle zwei (oben Rollstrecke, unten 15 m)
+        const single = text(m[1]).trim() === 'Gegenwind' && text(rm[2]).trim() === 'Faktor';
+        const cells = [...rm[3].matchAll(/<td( class="perf-afm-(in|x)")?>([^<]*)(?:<span class="perf-afm-2">([^<]*)<\/span>)?<\/td>/g)].map((c) => {
+          if (c[3] === '' && c[4] === undefined) { assert.equal(c[2], 'in', 'leer nur auf der blauen Linie: ' + r); return '~'; }
+          assert.ok(c[3] !== '' && (single ? c[4] === undefined : (c[4] !== undefined && c[4] !== '')), 'Zelle: ' + r);
+          const v = single ? c[3] : c[3] + '/' + c[4];
+          return c[2] === 'x' ? '*' + v + '*' : (c[2] === 'in' ? '~' : '') + v;
+        });
+        assert.equal(cells.length, cols.length, 'Zellen je Zeile: ' + r);
+        return (rm[1] ? '[' + text(rm[2]).trim() + ']' : text(rm[2]).trim()) + ': ' + cells.join(' | ');
+      });
+      out.push([text(m[1]).trim() + ' ‖ ' + cols.join(' | ')].concat(rows).join(' ‖ '));
+    });
+  }
+  // nichts ausserhalb erkannter Ausschnitte: jede Tabelle perf-afm steht in einer Zeile perf-steps-afm
+  assert.equal((html.match(/<table class="perf-afm">/g) || []).length, out.length, 'Ausschnitte ausserhalb der Zeile perf-steps-afm');
+  return out;
+}
+const AFM_LEGEND = 'AFM-Tabelle in m: oben Rollstrecke, unten über 15 m, blau die Eingabe oder der abgelesene Wert';
+// Gegenwind-Faktortabelle der DR400 (E4, Stützpunkte 0/10/20/30 kt): Ausschnitt bei 13 kt
+const DR400_FACTOR_13 = 'Gegenwind ‖ 10 kt | [13 kt] | 20 kt ‖ [Faktor]: ~0,85 | *0,79* | ~0,65';
 
 /* ── Adapter window.EDSF_WX ────────────────────────────────── */
 
@@ -265,15 +304,21 @@ test('Referenzfall: Zahlen aller Muster wie die Handrechnung, nur Piste 29, Unte
   assert.ok(has(block(render(wx, { aircraft: ARCUS }), '11'), 'Start 321 m 572 m 760 m'));
 });
 
-test('Robin DR400: Rechenweg kurz – Std, Zellen ohne «Tabelle», Faktortabelle, Gras je Strecke, Lesehilfe mit Zusatz «Std»', () => {
-  const d = text(details(render(wxEdsf(), { detailsOpen: true })));
+test('Robin DR400: Rechenweg kurz – Std, Ausschnitt mit Std-Spalten, Faktortabelle, Gras je Strecke, Lesehilfe mit Zusatz «Std»', () => {
+  const html = render(wxEdsf(), { detailsOpen: true });
+  const d = text(details(html));
+  // Ausschnitte laut Handrechnung: Zeilen 2.500 / 2.974 / 5.000 ft, Spalten Std / Std+0,1168 °C / Std+20 °C; je Phase danach
+  // die Gegenwind-Faktortabelle (13 kt zwischen 10 und 20 kt: 0,85 + 3/10 · (0,65 − 0,85) = 0,79)
+  assert.deepEqual(afmGrids(details(html)), [
+    ' ‖ Std | [Std+0,1168 °C] | Std+20 °C ‖ 2.500 ft: 250/490 | ~ | 290/570 ‖ [2.974 ft]: ~ | *≈260,67/≈512,29* | ~ ‖ 5.000 ft: 305/605 | ~ | 355/705',
+    DR400_FACTOR_13,
+    ' ‖ Std | [Std+0,1168 °C] | Std+20 °C ‖ 2.500 ft: 185/440 | ~ | 215/510 ‖ [2.974 ft]: ~ | *≈188,02/≈444,21* | ~ ‖ 5.000 ft: 200/460 | ~ | 235/535',
+    DR400_FACTOR_13
+  ]);
+  assert.ok(d.includes('interpoliert ≈260,67 m ≈512,29 m Gegenwind 10 kt 13 kt 20 kt Faktor 0,85 0,79 0,65 Gegenwind 13 kt × 0,79 (AFM, linear)'), d);
   [
     'Start · AFM S. 5.03 · 1.100 kg',
-    'Std bei 2.974 ft: 5,4832 °C (7 bis −1 °C) · Abweichung +0,1168 °C',
-    ' 2.500 ft / Std 250 m 490 m',
-    '2.500 ft / Std+20 °C 290 m 570 m',
-    '5.000 ft / Std 305 m 605 m',
-    '5.000 ft / Std+20 °C 355 m 705 m',
+    'Std bei 2.974 ft: 5,4832 °C (7 bis −1 °C) · Abweichung +0,1168 °C ' + AFM_LEGEND,
     'interpoliert ≈260,67 m ≈512,29 m',
     'Gegenwind 13 kt × 0,79 (AFM, linear) ≈205,93 m ≈404,71 m',
     'Gras × 1,15 236,83 m 465,42 m',
@@ -291,29 +336,38 @@ test('Robin DR400: Rechenweg kurz – Std, Zellen ohne «Tabelle», Faktortabell
   assert.ok(at(290, 10.4).includes('Gegenwind 10 kt × 0,85 (AFM)'), at(290, 10.4));
   assert.ok(at(290, 7.9).includes('Gegenwind 7 kt × 0,895 (AFM, linear)'));
   assert.ok(at(290, 35).includes('Gegenwind 35 kt × 0,55 (AFM, ab 30 kt)'), at(290, 35));
+  // Faktortabelle als Ausschnitt: genau auf 10 kt nur dieser Stützpunkt, 7 kt zwischen 0 und 10 kt, über 30 kt dessen Wert
+  const factorGrid = (dir, kt) => afmGrids(details(render(wxEdsf({ windDir: dir, windKt: kt }), { detailsOpen: true })))[1];
+  assert.equal(factorGrid(290, 10.4), 'Gegenwind ‖ [10 kt] ‖ [Faktor]: *0,85*');
+  assert.equal(factorGrid(290, 7.9), 'Gegenwind ‖ 0 kt | [7 kt] | 10 kt ‖ [Faktor]: ~1 | *0,895* | ~0,85');
+  assert.equal(factorGrid(290, 35), 'Gegenwind ‖ [30 kt] ‖ [Faktor]: *0,55*');
 });
 
-test('Super Dimona: m-Achse und Wind in der Tabelle (acht Zellen), Gras «mind.», Landung «kein AFM-Wert», Zusatz 15-kt-Wert', () => {
+test('Super Dimona: m-Achse und Wind in der Tabelle (je Tabellenwind ein Ausschnitt), Gras «mind.», Landung «kein AFM-Wert», Zusatz 15-kt-Wert', () => {
   const html = render(wxEdsf(), { aircraft: HK36R, detailsOpen: true });
   const d = text(details(html));
+  // 13 kt zwischen 10 und 15 kt: zwei Ausschnitte mit zusammen acht Tabellenzellen (Handrechnung)
+  assert.deepEqual(afmGrids(details(html)), [
+    'Gegenwind 10 kt ‖ 0 °C | [5,6 °C] | 15 °C ‖ 800 m: 113/190 | ~ | 135/226 ‖ [907 m]: ~ | *124,5232/≈208,99* | ~ ‖ 1.200 m: 125/210 | ~ | 148/248',
+    'Gegenwind 15 kt ‖ 0 °C | [5,6 °C] | 15 °C ‖ 800 m: 88/156 | ~ | 105/185 ‖ [907 m]: ~ | *96,9539/≈171,51* | ~ ‖ 1.200 m: 97/172 | ~ | 116/205'
+  ]);
   [
-    'Start · AFM S. 5-7',
-    '800 m / 0 °C / 10 kt 113 m 190 m',
-    '800 m / 0 °C / 15 kt 88 m 156 m',
-    '1.200 m / 15 °C / 15 kt 116 m 205 m',
-    'interpoliert ≈107,98 m ≈186,5 m',
+    'Start · AFM S. 5-7 ' + AFM_LEGEND,
+    'interpoliert für 13 kt ≈107,98 m ≈186,5 m Gegenwind 13 kt: in der AFM-Tabelle',
     'Gegenwind 13 kt: in der AFM-Tabelle',
     'Gras mind. +20 % der Rollstrecke (≈+21,6 m) 129,58 m 208,1 m',
     'aufgerundet 130 m 209 m',
     'Landung kein AFM-Wert',
     'Über 15 kt Gegenwind gilt der 15-kt-Wert.'
   ].forEach((s) => assert.ok(d.includes(s), 'fehlt: ' + s + '\n' + d));
-  assert.equal((details(html).match(/<tr><th scope="row">[\d.]+&nbsp;m \/ /g) || []).length, 8, 'acht Tabellenzellen');
   assert.ok(!d.includes('Faktortabelle') && !d.includes('nicht angerechnet') && !d.includes('Std ='));
-  // über dem grössten Tabellenwind: dessen Wert, mit Hinweis
-  const d2 = text(details(render(wxEdsf({ windDir: 290, windKt: 18 }), { aircraft: HK36R, detailsOpen: true })));
-  assert.ok(d2.includes('Gegenwind 18 kt: in der AFM-Tabelle (Wert für 15 kt)'), d2);
-  assert.ok(d2.includes('/ 15 kt'), d2);
+  // über dem grössten Tabellenwind: nur der Ausschnitt für 15 kt, Zeile «interpoliert» (nur in Höhe und Temperatur)
+  const h2 = details(render(wxEdsf({ windDir: 290, windKt: 18 }), { aircraft: HK36R, detailsOpen: true }));
+  const d2 = text(h2);
+  assert.deepEqual(afmGrids(h2), [
+    'Gegenwind 15 kt ‖ 0 °C | [5,6 °C] | 15 °C ‖ 800 m: 88/156 | ~ | 105/185 ‖ [907 m]: ~ | *96,9539/≈171,51* | ~ ‖ 1.200 m: 97/172 | ~ | 116/205'
+  ]);
+  assert.ok(d2.includes('interpoliert 96,9539 m ≈171,51 m Gegenwind 18 kt: in der AFM-Tabelle (Wert für 15 kt)'), d2);
 });
 
 test('Zuschlag «mindestens» ohne Aufklappen sichtbar: «Start: Gras mind. +20 % – kann länger sein.», nicht in der Kurzzeile', () => {
@@ -384,10 +438,11 @@ test('Arcus M: keine Windkorrektur im AFM – «(nicht angerechnet)»; Gras aus 
   const html = render(wxEdsf(), { aircraft: ARCUS, detailsOpen: true });
   assert.ok(has(block(html, '29'), 'Piste 29 · Gegenwind 13 kt (nicht angerechnet)'), text(block(html, '29')));
   const d = text(details(html));
+  assert.deepEqual(afmGrids(details(html)), [
+    ' ‖ 0 °C | [5,6 °C] | 15 °C ‖ 500 m: 225/435 | ~ | 253/490 ‖ [907 m]: ~ | *≈252,34/≈488,49* | ~ ‖ 1.000 m: 245/474 | ~ | 275/533'
+  ]);
   [
-    'Start · AFM S. 5.2.3',
-    '500 m / 0 °C 225 m 435 m',
-    '1.000 m / 15 °C 275 m 533 m',
+    'Start · AFM S. 5.2.3 ' + AFM_LEGEND,
     'interpoliert ≈252,34 m ≈488,49 m',
     'Gegenwind: nicht angerechnet (kein AFM-Wert)',
     'Gras +20 % der Rollstrecke (≈+50,47 m) 302,81 m 538,97 m',
@@ -463,18 +518,23 @@ test('DR400 mit 1.050 kg: Start und Landung zwischen den Tabellen interpoliert (
   assert.ok(has(block(p.body, '29'), 'Start 209 m 417 m 760 m Landung 164 m 389 m 760 m'), text(block(p.body, '29')));
   assert.ok(!has(p.body, 'Abfluggewicht 1.050 kg:'), 'keine Kopfzeile mehr');
   const d = text(details(p.body));
+  // je Phase zuerst der Ausschnitt der schwereren, dann der leichteren Tabelle (Kopf = Gewicht), ohne eigene Wertzeile
+  assert.deepEqual(afmGrids(details(p.body)), [
+    '1.100 kg ‖ Std | [Std+0,1168 °C] | Std+20 °C ‖ 2.500 ft: 250/490 | ~ | 290/570 ‖ [2.974 ft]: ~ | *≈260,67/≈512,29* | ~ ‖ 5.000 ft: 305/605 | ~ | 355/705',
+    '1.000 kg ‖ Std | [Std+0,1168 °C] | Std+20 °C ‖ 2.500 ft: 190/370 | ~ | 220/430 ‖ [2.974 ft]: ~ | *≈198,72/≈405,47* | ~ ‖ 5.000 ft: 235/555 | ~ | 275/650',
+    DR400_FACTOR_13,
+    '1.100 kg ‖ Std | [Std+0,1168 °C] | Std+20 °C ‖ 2.500 ft: 185/440 | ~ | 215/510 ‖ [2.974 ft]: ~ | *≈188,02/≈444,21* | ~ ‖ 5.000 ft: 200/460 | ~ | 235/535',
+    '1.000 kg ‖ Std | [Std+0,1168 °C] | Std+20 °C ‖ 2.500 ft: 170/405 | ~ | 200/470 ‖ [2.974 ft]: ~ | *172,0712/≈410,13* | ~ ‖ 5.000 ft: 180/430 | ~ | 210/500',
+    DR400_FACTOR_13
+  ]);
   [
     'Eingaben: 1.050 kg, Landung 1.050 kg · Druckhöhe 2.974 ft',
     'Start · AFM S. 5.03 · 1.100 und 1.000 kg',
     'Landung · AFM S. 5.08 · 1.100 und 1.000 kg',
-    '1.100 kg · 2.500 ft / Std 250 m 490 m',
-    '1.100 kg · interpoliert ≈260,67 m ≈512,29 m',
-    '1.000 kg · 2.500 ft / Std 190 m 370 m',
-    '1.000 kg · interpoliert ≈198,72 m ≈405,47 m',
     'interpoliert für 1.050 kg ≈229,7 m ≈458,88 m',
-    '1.000 kg · 2.500 ft / Std 170 m 405 m',
     'interpoliert für 1.050 kg ≈180,05 m ≈427,17 m'
   ].forEach((s) => assert.ok(d.includes(s), 'fehlt: ' + s + '\n' + d));
+  assert.ok(!d.includes('kg · interpoliert') && !d.includes('kg · Tabellenwert'), 'keine Wertzeile je Gewichtstabelle');
   assert.equal(text(p.teaser).trim(), 'Robin DR400/200R · 1.050 kg · Piste 29 Rollstrecke: Start 209 m · Landung 164 m');
   // unter der leichtesten Tabelle: deren Werte (Handrechnung 900 kg: 181/369 und 157/373)
   const q = parts(wxEdsf(), { massText: '900', detailsOpen: true });
@@ -578,8 +638,210 @@ test('Formate wie die EDSF-Seite: Tausenderpunkt, Dezimalkomma, echtes Minus; Fa
   assert.ok(has(render(wxEdsf()), 'QNH 1010,0 hPa'));
 });
 
-test('Version: perf.js, perf-ui.js und index.html stimmen überein (VERSION 9); Kern als PerfCore', () => {
-  assert.equal(ui.VERSION, 9);
+/* ── Tabellenausschnitt im Rechenweg (VERSION 10, Variante A vom 21.11.2026) ── */
+
+test('Tabellenausschnitt: Beispiel des Benutzers – Dimona 822 m, 4,3 °C, 6 kt Gegenwind', () => {
+  // QNH 1020,2 → 2.696 ft = 822 m; Wind 6,5 kt genau aus 290° auf Piste 29 → 6 kt
+  const h = details(render(wxEdsf({ qnhHpa: 1020.2, tempC: 4.3, windDir: 290, windKt: 6.5 }), { aircraft: HK36R, detailsOpen: true }));
+  const d = text(h);
+  assert.ok(d.includes('Druckhöhe 2.696 ft = 822 m') && d.includes('Gegenwind 6,50 kt → 6 kt'), d);
+  assert.deepEqual(afmGrids(h), [
+    'Gegenwind 5 kt ‖ 0 °C | [4,3 °C] | 15 °C ‖ 800 m: 142/229 | ~ | 168/269 ‖ [822 m]: ~ | *150,2391/≈241,74* | ~ ‖ 1.200 m: 156/251 | ~ | 183/295',
+    'Gegenwind 10 kt ‖ 0 °C | [4,3 °C] | 15 °C ‖ 800 m: 113/190 | ~ | 135/226 ‖ [822 m]: ~ | *≈119,98/≈201,45* | ~ ‖ 1.200 m: 125/210 | ~ | 148/248'
+  ]);
+  assert.ok(d.includes('interpoliert für 6 kt ≈144,19 m ≈233,68 m Gegenwind 6 kt: in der AFM-Tabelle'), d);
+  // Reihenfolge: Kopf der Phase, Legende, Ausschnitte, Wertzeile
+  const i = ['Start <span', ui.TEXT.calcAfm, '<tr class="perf-steps-afm">', 'interpoliert für 6'].map((s) => h.indexOf(s));
+  assert.ok(i[0] >= 0 && i[0] < i[1] && i[1] < i[2] && i[2] < i[3], i.join(' '));
+  assert.equal(ui.TEXT.calcAfm, 'oben Rollstrecke, unten über 15&nbsp;m, blau die Eingabe oder der abgelesene Wert');
+});
+
+test('Tabellenausschnitt: Spalte oder Zelle direkt abgelesen, Temperatur unter der Tabelle, Faustregel ohne Ausschnitt', () => {
+  // Arcus M bei 880 m und genau 15 °C: nur die Spalte 15 °C (blau), die Zeilen interpoliert
+  let h = details(render(wxEdsf({ qnhHpa: 1013.25, tempC: 15, windKt: 0.5 }), { aircraft: ARCUS, detailsOpen: true }));
+  assert.deepEqual(afmGrids(h), [' ‖ [15 °C] ‖ 500 m: ~253/490 ‖ [880 m]: *269,72/522,68* ‖ 1.000 m: ~275/533']);
+  assert.ok(text(h).includes('interpoliert 269,72 m 522,68 m'), text(h));
+  // genau 1.000 m und 15 °C: eine Zelle, Wertzeile «Tabellenwert»
+  h = details(render(wxEdsf({ qnhHpa: 998.9, tempC: 15, windKt: 0.5 }), { aircraft: ARCUS, detailsOpen: true }));
+  assert.ok(text(h).includes('Druckhöhe 3.280 ft = 1.000 m'), text(h));
+  assert.deepEqual(afmGrids(h), [' ‖ [15 °C] ‖ [1.000 m]: *275/533*']);
+  assert.ok(text(h).includes('Tabellenwert 275 m 533 m'), text(h));
+  // ganze Temperatur zwischen zwei Spalten: Eingabe mit einer Nachkommastelle wie in den Eingaben («5,0 °C»)
+  h = details(render(wxEdsf({ tempC: 5 }), { aircraft: ARCUS, detailsOpen: true }));
+  assert.ok(text(h).includes('· 5,0 °C ·'), text(h));
+  assert.deepEqual(afmGrids(h), [' ‖ 0 °C | [5,0 °C] | 15 °C ‖ 500 m: 225/435 | ~ | 253/490 ‖ [907 m]: ~ | *251,156/≈486,16* | ~ ‖ 1.000 m: 245/474 | ~ | 275/533']);
+  // Dimona bei −5 °C (Tabelle ab 0 °C): Spalte 0 °C abgelesen, je Tabellenwind ein Ausschnitt
+  h = details(render(wxEdsf({ tempC: -5 }), { aircraft: HK36R, detailsOpen: true }));
+  assert.deepEqual(afmGrids(h), [
+    'Gegenwind 10 kt ‖ [0 °C] ‖ 800 m: ~113/190 ‖ [907 m]: *116,21/195,35* ‖ 1.200 m: ~125/210',
+    'Gegenwind 15 kt ‖ [0 °C] ‖ 800 m: ~88/156 ‖ [907 m]: *90,4075/160,28* ‖ 1.200 m: ~97/172'
+  ]);
+  assert.ok(text(h).includes('interpoliert für 13 kt 100,7285 m 174,308 m'), text(h));
+  // Faustregel-Punkt (Eurostar): kein Ausschnitt, keine Legende
+  h = details(render(wxEdsf(), { aircraft: EV97, detailsOpen: true }));
+  assert.deepEqual(afmGrids(h), []);
+  assert.ok(!h.includes(ui.TEXT.calcAfm) && !h.includes('perf-afm'), 'Punkt-Tabelle ohne Ausschnitt');
+});
+
+// Achsenwert aus einer Beschriftung: «2.500 ft» → 2500, «−15 °C» → −15, «Std» → 0, «Std+0,1168 °C» → 0,1168, «Gegenwind 10 kt» → 10
+function afmNum(label) {
+  const s = label.replace(/^\[|\]$/g, '').replace(/^Gegenwind /, '');
+  if (s === 'Std') return 0;
+  const m = /^(?:Std)?([+−]?)(\d{1,3}(?:\.\d{3})*(?:,\d+)?) (?:ft|m|°C|kt|kg)$/.exec(s);
+  assert.ok(m, 'Beschriftung «' + label + '»');
+  return (m[1] === '−' ? -1 : 1) * Number(m[2].replace(/\./g, '').replace(',', '.'));
+}
+
+test('Tabellenausschnitt: jede Zelle gleich der AFM-Tabelle, Grenzen benachbart, Schnittpunkt nachgerechnet (alle Muster, viele Lagen)', () => {
+  const WX = [{}, { tempC: -5 }, { tempC: 0 }, { tempC: 15 }, { tempC: 24 }, { qnhHpa: 1035 }, { qnhHpa: 985 }, { windKt: 0.5 },
+    { windDir: 290, windKt: 18 }, { windDir: 290, windKt: 6.5 }, { windDir: 110, windKt: 9 }, { windDir: 290, windKt: 10.2 }];
+  const fx = ui.fmtExact;
+  let grids = 0, cells = 0, xs = 0, factors = 0;
+  [[DR400, ['', '1050', '900', '1000']], [HK36R, ['']], [ARCUS, ['']]].forEach(([ac, masses]) => {
+    masses.forEach((massText) => WX.forEach((over) => {
+      const p = parts(wxEdsf(over), { aircraft: ac, detailsOpen: true, massText });
+      if (p.kind !== 'result') return;
+      const label = ac.id + ' ' + JSON.stringify(over) + ' ' + massText;
+      const h = details(p.body);
+      // je Phase ihre Ausschnitte (geteilt am Kopf der Phase; die Ausschnitte haben eigene tbody); Tabelle nach dem
+      // Gewicht im Kopf, sonst die Haupttabelle
+      h.split('<tbody><tr class="perf-steps-ph">').slice(1).forEach((tb) => {
+        const ph = /^<th colspan="3" scope="rowgroup">(Start|Landung)/.exec(tb);
+        assert.ok(ph, label);
+        const ch = ac.charts[ph[1] === 'Start' ? 'takeoff' : 'landing'];
+        const gs = afmGrids(tb);
+        if (ch.absent) { assert.equal(gs.length, 0); return; }
+        assert.ok(gs.length >= 1 && has(tb, AFM_LEGEND), label + ' Legende');
+        // eine Gewichtstabelle (unter der leichtesten, genau auf einer): ihr Gewicht steht nur im Kopf der Phase
+        const src = /<span class="perf-steps-src">([^<]*)<\/span>/.exec(tb)[1];
+        const one = /· ([\d.]+)&nbsp;kg$/.exec(src);
+        const headKg = one ? afmNum(one[1] + ' kg') : undefined;
+        gs.forEach((g) => {
+          const parts_ = g.split(' ‖ ');
+          // Gegenwind-Faktortabelle (E4): Stützpunkte aus den Daten benachbart, Werte gleich, Faktor nachgerechnet und wie im
+          // AFM-Wert verwendet auf drei Dezimalen aufgerundet; genau auf einem Stützpunkt bzw. über dem letzten nur dieser
+          if (parts_[0] === 'Gegenwind') {
+            factors++;
+            const hw = ch.corrections.find((c) => c.kind === 'headwind' && c.type === 'factorTable');
+            assert.ok(hw && parts_.length === 3 && parts_[2].startsWith('[Faktor]: '), label + ' Faktortabelle ' + g);
+            const kts = hw.points.map((pt) => pt[0]);
+            const fcols = parts_[1].split(' | '), fcells = parts_[2].slice('[Faktor]: '.length).split(' | ');
+            if (fcols.length === 1) {
+              const pt = hw.points.find((q) => q[0] === afmNum(fcols[0]));
+              assert.ok(/^\[/.test(fcols[0]) && pt, label + ' Stützpunkt ' + fcols[0]);
+              assert.deepEqual(fcells, ['*' + fx(pt[1]) + '*'], label + ' Faktor');
+            } else {
+              const [k0, k, k1] = fcols.map(afmNum), j = kts.indexOf(k0);
+              assert.ok(fcols.length === 3 && /^\[/.test(fcols[1]) && j >= 0 && kts[j + 1] === k1 && k0 < k && k < k1, label + ' Grenzen ' + fcols);
+              const raw = hw.points[j][1] + (k - k0) * (hw.points[j + 1][1] - hw.points[j][1]) / (k1 - k0);
+              assert.deepEqual(fcells, ['~' + fx(hw.points[j][1]), '*' + fx(Math.ceil(raw * 1000 - 1e-9) / 1000) + '*', '~' + fx(hw.points[j + 1][1])], label + ' Faktoren');
+            }
+            return;
+          }
+          grids++;
+          const caps = parts_[0].split(' · ').filter(Boolean);
+          const capKg = caps.filter((c) => / kg$/.test(c)).map(afmNum)[0];
+          const kg = capKg !== undefined ? capKg : headKg;
+          const lw = (ch.lowerWeights || []).find((w) => w.mass.kg === kg);
+          const table = lw ? lw.table : ch.table;
+          const extra = caps.filter((c) => / kt$/.test(c)).map(afmNum);
+          assert.equal(extra.length, table.axes.length - 2, label + ' Kopf je weitere Achse');
+          const cols = parts_[1].split(' | ');
+          const rows = parts_.slice(2).map((r) => { const k = r.indexOf(': '); return { label: r.slice(0, k), cells: r.slice(k + 2).split(' | ') }; });
+          // Linien: entweder ein Tabellenwert (blau) oder untere Grenze, Eingabe (blau), obere Grenze – benachbart
+          const lineOk = (ls, ax) => {
+            const vs = ls.map((l) => (/^\[/.test(l) ? null : afmNum(l)));
+            if (ls.length === 1) { assert.ok(/^\[/.test(ls[0]) && ax.values.includes(afmNum(ls[0])), label + ' ' + ls); return; }
+            assert.equal(ls.length, 3, label);
+            assert.ok(/^\[/.test(ls[1]) && vs[0] !== null && vs[2] !== null, label + ' ' + ls);
+            const j = ax.values.indexOf(vs[0]);
+            assert.ok(j >= 0 && ax.values[j + 1] === vs[2], label + ' benachbart ' + ls);
+            const inp = afmNum(ls[1]);
+            assert.ok(inp > vs[0] && inp < vs[2], label + ' Eingabe dazwischen ' + ls);
+          };
+          lineOk(rows.map((r) => r.label), table.axes[0]);
+          lineOk(cols, table.axes[1]);
+          const cellAt = (rv, cv) => {
+            let node = table.cells;
+            [rv, cv].concat(extra).forEach((v, k) => { const j = table.axes[k].values.indexOf(v); assert.ok(j >= 0, label + ' Achsenwert ' + v); node = node[j]; });
+            return node;
+          };
+          rows.forEach((r) => r.cells.forEach((c, ci) => {
+            const rIn = /^\[/.test(r.label), cIn = /^\[/.test(cols[ci]);
+            if (rIn && cIn) { assert.ok(/^\*[^*]+\*$/.test(c), label + ' Schnittpunkt ' + c); return; }
+            if ((rows.length === 3 && rIn) || (cols.length === 3 && cIn)) { assert.equal(c, '~', label + ' leer auf der Eingabe'); return; }
+            const v = cellAt(afmNum(r.label), afmNum(cols[ci]));
+            assert.equal(c, (rIn || cIn ? '~' : '') + fx(v[0]) + '/' + fx(v[1]), label + ' Zelle ' + r.label + ' / ' + cols[ci]);
+            cells++;
+          }));
+          // Schnittpunkt bei Interpolation in beiden Achsen aus den Grenzen und der Eingabe nachgerechnet (Spalten zuerst)
+          if (rows.length === 3 && cols.length === 3 && !/≈/.test(rows[1].label + cols[1])) {
+            const [r0, r1, r2] = rows.map((r) => r.label), [c0, c1, c2] = cols;
+            const lerp = (a, b, x, x0, x1) => a + (x - x0) * (b - a) / (x1 - x0);
+            const inRow = (rl, n) => lerp(cellAt(afmNum(rl), afmNum(c0))[n], cellAt(afmNum(rl), afmNum(c2))[n], afmNum(c1), afmNum(c0), afmNum(c2));
+            const x = [0, 1].map((n) => lerp(inRow(r0, n), inRow(r2, n), afmNum(r1), afmNum(r0), afmNum(r2)));
+            assert.equal(rows[1].cells[1], '*' + fx(x[0]) + '/' + fx(x[1]) + '*', label + ' Schnittpunkt nachgerechnet');
+            xs++;
+          }
+        });
+      });
+    }));
+  });
+  assert.ok(grids >= 60 && cells >= 200 && xs >= 30 && factors >= 20, [grids, cells, xs, factors].join(' '));
+});
+
+test('Tabellenausschnitt: Abweichung genau 0 (Std) wird abgelesen, nicht zwischen «Std» und «Std+20» interpoliert', () => {
+  // DR400 bei QNH 955,5 (4.500 ft) und 0,6 °C: Std auf 4.500 ft ist 0,6 °C; T − Std wäre ohne Rundung 3,3e-16 bzw. −4,4e-16
+  const h = details(render(wxEdsf({ qnhHpa: 955.5, tempC: 0.6 }), { detailsOpen: true }));
+  assert.ok(text(h).includes('Std bei 4.500 ft: 0,6 °C (7 bis −1 °C) · Abweichung 0 °C'), text(h));
+  // Std-Spalte direkt: 250 + 2000/2500 · (305 − 250) = 294, 490 + 0,8 · (605 − 490) = 582
+  assert.equal(afmGrids(h)[0], ' ‖ [Std] ‖ 2.500 ft: ~250/490 ‖ [4.500 ft]: *294/582* ‖ 5.000 ft: ~305/605');
+  const lk = core.compute(DR400, AF, { tempC: 0.6, qnhHpa: 955.5, windDirTrue: 269, windKt: 26 / 1.852, runwayWet: false }).lookups.takeoff;
+  const dev = lk.axes.find((a) => a.quantity === 'temperatureDeviation');
+  assert.ok(dev && dev.input === 0 && !Object.is(dev.input, -0) && dev.interpolated === false, JSON.stringify(dev));
+});
+
+test('Tabellenausschnitt: Daten – Zeilen Druckhöhe, Spalten Temperatur bzw. Abweichung, in jeder Tabelle jedes Musters', () => {
+  // der Ausschnitt nimmt Achse 0 als Zeilen und Achse 1 als Spalten; weitere Achsen (Gegenwind) je Ausschnitt
+  let n = 0;
+  LIST.forEach((it) => {
+    const ac = readJson('perf/aircraft/' + it.file);
+    core.PHASES.forEach((ph) => {
+      const ch = ac.charts[ph];
+      if (!ch || ch.absent) return;
+      [ch.table].concat((ch.lowerWeights || []).map((w) => w.table)).forEach((t) => {
+        if (t.type === 'point') return;
+        assert.equal(t.axes[0].quantity, 'pressureAltitude', ac.id + ' ' + ph);
+        assert.ok(['temperature', 'temperatureDeviation'].includes(t.axes[1].quantity), ac.id + ' ' + ph);
+        t.axes.slice(2).forEach((a) => assert.equal(a.quantity, 'headwind', ac.id + ' ' + ph));
+        n++;
+      });
+    });
+  });
+  assert.ok(n >= 6, n + ' Tabellen');
+});
+
+test('Tabellenausschnitt: CSS – eigene Klassen (keine Doppelung mit dem Kartenraster .perf-grid), Blau der Seite, fetter Schnittpunkt', () => {
+  const css = ui.CSS;
+  assert.equal((css.match(/\.perf-grid \{/g) || []).length, 1, '.perf-grid nur für das Kartenraster');
+  [
+    '.perf-steps tr.perf-steps-afm > td { padding: 2px 0 6px; text-align: left; white-space: normal; }',
+    '.perf-afm { border-collapse: collapse; font-size: 0.74rem; font-variant-numeric: tabular-nums; }',
+    '.perf-steps .perf-afm th:first-child { padding-left: 4px; text-align: left; }',
+    '.perf-steps .perf-afm tbody th { color: var(--text-muted); }',
+    '.perf-steps .perf-afm .perf-afm-in { color: #38bdf8; background: rgba(56, 189, 248, 0.12); }',
+    // Schnittpunkt heller (Kontrast 5,2 : 1 statt 4,0 : 1), in blauen Zellen auch die zweite Zeile voll deckend
+    '.perf-steps .perf-afm td.perf-afm-x { color: #7dd3fc; background: rgba(56, 189, 248, 0.26); font-weight: 700; }',
+    '.perf-afm-2 { display: block; opacity: 0.75; }',
+    '.perf-steps .perf-afm .perf-afm-in .perf-afm-2, .perf-steps .perf-afm td.perf-afm-x .perf-afm-2 { opacity: 1; }'
+  ].forEach((s) => assert.ok(css.includes(s), 'CSS fehlt: ' + s));
+  // die Regeln des Ausschnitts stehen nach denen der Schritt-Tabelle (gleiche Spezifität: die spätere gilt)
+  assert.ok(css.indexOf('.perf-steps .perf-afm th, .perf-steps .perf-afm td {') > css.indexOf('.perf-steps td { color: var(--text); white-space: nowrap; }'));
+  assert.ok(css.indexOf('.perf-steps .perf-afm thead th {') > css.indexOf('.perf-steps thead th {'));
+});
+
+test('Version: perf.js, perf-ui.js und index.html stimmen überein (VERSION 10); Kern als PerfCore', () => {
+  assert.equal(ui.VERSION, 10);
   assert.equal(core.VERSION, ui.VERSION);
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const m1 = html.match(/<script defer src="perf\/perf\.js\?v=(\d+)"><\/script>/);

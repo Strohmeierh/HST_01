@@ -27,6 +27,8 @@
    ist der Pistenzustand unbekannt: trocken gerechnet, mit Hinweis.
    VERSION 9: Kartentexte kurz und prägnant (Wunsch des Benutzers vom 20.11.2026, Vorgabe texte-kurz.md); Zahlen,
    Rechnung, Kurzzeile, Farben und Zustände unverändert.
+   VERSION 10: Ablesung im Rechenweg als Tabellenausschnitt wie im AFM (Wunsch des Benutzers vom 21.11.2026, Variante A):
+   die Eingabe blau als Zeile bzw. Spalte zwischen den zwei Tabellenwerten, im Schnittpunkt fett der Wert dafür.
    Browser: window.EdsfPerf = { update, version, _tick }. Node: reine Funktionen für die Tests.
    VERSION gleich dem ?v= in index.html und in perf/perf.js halten.
    Browsercode in ES2015, ohne Optional Chaining, Nullish Coalescing und Lookbehind. */
@@ -39,7 +41,7 @@
 }(typeof self !== 'undefined' ? self : this, function (core) {
   'use strict';
 
-  var VERSION = 9;
+  var VERSION = 10;
 
   var STALE_MIN = 45;          // Messwerte älter: keine Zahlen
   var FUTURE_MIN = 5;          // Messzeit weiter in der Zukunft: keine Zahlen
@@ -91,6 +93,9 @@
     // Zeilen im Rechenweg: Gegenwind ohne AFM-Korrektur, nass ohne AFM-Wert
     calcNoWindRule: 'Gegenwind: nicht angerechnet (kein AFM-Wert)',
     calcNoWet: 'nass: kein AFM-Wert, ohne Zuschlag',
+    // Legende über dem Tabellenausschnitt (VERSION 10), nach «AFM-Tabelle in m: »; blau ist auch eine direkt abgelesene
+    // Zeile oder Spalte (genau auf einem Tabellenwert, unter der Tabelle, über dem grössten Tabellenwind)
+    calcAfm: 'oben Rollstrecke, unten über 15&nbsp;m, blau die Eingabe oder der abgelesene Wert',
     // Abfluggewicht: Beschriftung des Felds, Fehlertexte (reiner Text, ohne HTML; Über- und Untergrenze mit Zahlen in
     // parseMass) und Sätze der Zeile «Start … nicht möglich» je Piste
     massLabel: 'Abfluggewicht in kg',
@@ -226,6 +231,24 @@
     // Zeilen der Faustregel im Rechenweg: Kopf rot und fett, Zeilen gelb auf rötlichem Grund
     '.perf-steps tr.perf-steps-rule-h td.perf-steps-note { color: #f87171; font-weight: 700; padding-top: 6px; }',
     '.perf-steps tr.perf-steps-rule th, .perf-steps tr.perf-steps-rule td { color: #fcd34d; background: rgba(239, 68, 68, 0.10); }',
+    // Tabellenausschnitt im Rechenweg (VERSION 10, Variante A): Zeilen Druckhöhe, Spalten Temperatur. Blau die Eingabe als
+    // Zeile bzw. Spalte zwischen den zwei Tabellenwerten (bzw. die abgelesene Zeile oder Spalte), im Schnittpunkt fett der
+    // Wert; je Zelle oben die Rollstrecke, darunter über 15 m (.perf-afm-2). Die Regeln für Zellen stehen mit .perf-steps
+    // davor, damit sie die Regeln der Schritt-Tabelle (.perf-steps th/td greifen auch im Ausschnitt) sicher übersteuern.
+    // Kontrast auf --card-bg: Blau #38bdf8 auf 12 % Blau 5,4 : 1, Schnittpunkt #7dd3fc auf 26 % Blau 5,2 : 1 (AA 4,5 : 1);
+    // in blauen Zellen auch die zweite Zeile voll deckend.
+    '.perf-steps tr.perf-steps-afm > td { padding: 2px 0 6px; text-align: left; white-space: normal; }',
+    '.perf-afm { border-collapse: collapse; font-size: 0.74rem; font-variant-numeric: tabular-nums; }',
+    '.perf-afm + .perf-afm { margin-top: 6px; }',
+    '.perf-steps .perf-afm th, .perf-steps .perf-afm td { padding: 2px 6px; text-align: right; vertical-align: top; white-space: nowrap; color: var(--text); font-weight: 400; border-top: 1px solid var(--card-border); }',
+    '.perf-steps .perf-afm thead th { font-size: inherit; font-weight: 600; color: var(--text-muted); vertical-align: bottom; border-top: 0; }',
+    '.perf-steps .perf-afm th:first-child { padding-left: 4px; text-align: left; }',
+    '.perf-steps .perf-afm tbody th { color: var(--text-muted); }',
+    '.perf-steps .perf-afm th.perf-afm-cap { color: var(--text); white-space: normal; }',
+    '.perf-steps .perf-afm .perf-afm-in { color: #38bdf8; background: rgba(56, 189, 248, 0.12); }',
+    '.perf-steps .perf-afm td.perf-afm-x { color: #7dd3fc; background: rgba(56, 189, 248, 0.26); font-weight: 700; }',
+    '.perf-afm-2 { display: block; opacity: 0.75; }',
+    '.perf-steps .perf-afm .perf-afm-in .perf-afm-2, .perf-steps .perf-afm td.perf-afm-x .perf-afm-2 { opacity: 1; }',
     // Pflichthinweis: immer rot und fett (Wunsch 20.11.), gleiche Grösse wie die übrigen kleinen Zeilen der Karte;
     // #f87171 auf --card-bg hat Kontrast 5 : 1
     '.perf-foot { font-size: 0.78rem; color: #f87171; font-weight: 700; line-height: 1.5; border-top: 1px solid var(--card-border); padding-top: 8px; margin-top: 4px; }',
@@ -972,14 +995,101 @@
     return fmtExact(v) + (unit ? '&nbsp;' + unit : '');
   }
 
-  // Werte der Achsen einer Tabellenzelle, «2.000 ft / 20 °C»
-  function axesText(lk, vals) {
-    return lk.axes.map(function (a, i) { return axisValueText(a, vals[i]); }).join(' / ');
+  /* Tabellenausschnitt wie im AFM (VERSION 10, Wunsch des Benutzers vom 21.11.2026, Variante A): Zeilen = erste Achse
+     (Druckhöhe), Spalten = zweite Achse (Temperatur bzw. Abweichung von Std). Wird auf einer Achse interpoliert, steht die
+     Eingabe als eigene Zeile bzw. Spalte zwischen den zwei Tabellenwerten; sonst ist die abgelesene Zeile bzw. Spalte
+     markiert (blau). Im Schnittpunkt steht fett der Wert dafür, die übrigen Zellen der blauen Zeile und Spalte bleiben
+     bei Interpolation leer. Jede Zelle: oben die Rollstrecke, darunter über 15 m, ohne Einheit (die nennt die Legende).
+     Weitere Achsen (Gegenwind der Dimona): je verwendetem Tabellenwert ein eigener Ausschnitt, im Schnittpunkt der Wert
+     für diesen Tabellenwert. Die Tabellenzellen stammen aus lookup.corners, der Schnittpunkt aus lookup.values; nur bei
+     mehreren Ausschnitten wird er je Ausschnitt nachgerechnet, wie im Kern (erst multiplizieren, dann teilen). */
+  var AXIS_NAME = { headwind: 'Gegenwind' };
+
+  // Eingabe einer Achse: die Temperatur mit einer Nachkommastelle wie in den Eingaben («5,0 °C»), sonst wie ein Achsenwert
+  function axisInputText(a) {
+    return a.quantity === 'temperature' ? fmtDec(a.input, 1) + '&nbsp;°C' : axisValueText(a, a.input);
   }
 
-  // Ablesung einer Tabelle: die verwendeten Zellen (eine, zwei, vier oder acht, ohne Wort «Tabelle») und bei
-  // Interpolation der Wert dazwischen («interpoliert», ohne die Eingaben zu wiederholen). pre: Gewicht der Tabelle, wenn
-  // zwischen zwei Tabellen interpoliert wird («1.100 kg»), sonst leer. Punkt-Tabelle (E8): «AFM 0 ft / 15 °C».
+  // Zeilen bzw. Spalten einer Achse. x: Linie durch den Schnittpunkt (blau); input: Linie der Eingabe ohne Tabellenwerte
+  function afmLine(a) {
+    if (!a) return [{ v: null, label: '', x: true, input: false }];
+    if (!a.interpolated) return [{ v: a.value, label: axisValueText(a, a.value), x: true, input: false }];
+    return [
+      { v: a.lower, label: axisValueText(a, a.lower), x: false, input: false },
+      { v: null, label: axisInputText(a), x: true, input: true },
+      { v: a.upper, label: axisValueText(a, a.upper), x: false, input: false }
+    ];
+  }
+
+  // Tabellenwerte der weiteren Achsen (ab der dritten), je Ausschnitt einer: interpoliert die untere und die obere
+  function afmCombos(lk) {
+    var combos = [[]];
+    lk.axes.slice(2).forEach(function (a) {
+      var vs = a.interpolated ? [a.lower, a.upper] : [a.value], next = [];
+      combos.forEach(function (c) { vs.forEach(function (v) { next.push(c.concat([v])); }); });
+      combos = next;
+    });
+    return combos;
+  }
+
+  // Werte einer Tabellenzelle aus lookup.corners: Zeilenwert rv, Spaltenwert cv, Werte der weiteren Achsen combo; sonst null
+  function afmCell(lk, rv, cv, combo) {
+    var want = [rv].concat(lk.axes.length > 1 ? [cv] : [], combo);
+    for (var i = 0; i < lk.corners.length; i++) {
+      var av = lk.corners[i].axisValues, ok = av.length === want.length;
+      for (var k = 0; ok && k < want.length; k++) ok = av[k] === want[k];
+      if (ok) return lk.corners[i].values;
+    }
+    return null;
+  }
+
+  // Linear zwischen zwei Wertepaaren mit dem Gewicht der Achse a (num / den)
+  function afmLerp(lo, hi, a) {
+    var r = {};
+    Object.keys(lo).forEach(function (k) { r[k] = lo[k] + a.num * (hi[k] - lo[k]) / a.den; });
+    return r;
+  }
+
+  // Wert im Schnittpunkt eines Ausschnitts: in jeder Zeile zuerst zwischen den Spalten, dann zwischen den Zeilen
+  function afmValue(lk, combo) {
+    var a0 = lk.axes[0], a1 = lk.axes[1];
+    function inRow(rv) {
+      if (!a1 || !a1.interpolated) return afmCell(lk, rv, a1 ? a1.value : null, combo);
+      var lo = afmCell(lk, rv, a1.lower, combo), hi = afmCell(lk, rv, a1.upper, combo);
+      return lo && hi ? afmLerp(lo, hi, a1) : null;
+    }
+    if (!a0.interpolated) return inRow(a0.value);
+    var lo = inRow(a0.lower), hi = inRow(a0.upper);
+    return lo && hi ? afmLerp(lo, hi, a0) : null;
+  }
+
+  // Zelle: Rollstrecke, darunter über 15 m
+  function afmPair(v) {
+    return v ? fmtExact(v.groundRoll) + '<span class="perf-afm-2">' + fmtExact(v.overObstacle) + '</span>' : '';
+  }
+
+  // Ein Ausschnitt; cap: Kopf links oben («1.100 kg», «Gegenwind 5 kt»), x: Wert im Schnittpunkt
+  function afmTable(lk, combo, cap, x) {
+    var rows = afmLine(lk.axes[0]), cols = afmLine(lk.axes[1]);
+    var h = '<table class="perf-afm"><thead><tr><th class="perf-afm-cap" scope="col">' + cap + '</th>' +
+      cols.map(function (c) { return '<th scope="col"' + (c.x ? ' class="perf-afm-in"' : '') + '>' + c.label + '</th>'; }).join('') +
+      '</tr></thead><tbody>';
+    rows.forEach(function (r) {
+      h += '<tr><th scope="row"' + (r.x ? ' class="perf-afm-in"' : '') + '>' + r.label + '</th>';
+      cols.forEach(function (c) {
+        if (r.x && c.x) h += '<td class="perf-afm-x">' + afmPair(x) + '</td>';
+        else if (r.input || c.input) h += '<td class="perf-afm-in"></td>';
+        else h += '<td' + (r.x || c.x ? ' class="perf-afm-in"' : '') + '>' + afmPair(afmCell(lk, r.v, c.v, combo)) + '</td>';
+      });
+      h += '</tr>';
+    });
+    return h + '</tbody></table>';
+  }
+
+  // Ablesung einer Tabelle: der Ausschnitt bzw. die Ausschnitte, danach der Wert in den Spalten der Schritt-Tabelle:
+  // «interpoliert», «interpoliert für 6 kt» (weitere Achse) bzw. «Tabellenwert». pre: Gewicht der Tabelle, wenn zwischen
+  // zwei Tabellen interpoliert wird («1.100 kg»), sonst leer; dann steht der Wert nur im Ausschnitt (die Zeile
+  // «interpoliert für … kg» folgt in stepRows), ausser es gibt mehrere Ausschnitte. Punkt-Tabelle (E8): «AFM 0 ft / 15 °C».
   function lookupRows(lk, u, pre, up) {
     var p0 = pre ? pre + ' · ' : '';
     if (lk.point) {
@@ -987,9 +1097,19 @@
       return stepRow('AFM ' + p0 + (isNum(c.pressureAltitudeFt) ? fmtInt(c.pressureAltitudeFt) : '0') + '&nbsp;ft / ' +
         (isNum(c.temperatureC) ? fmtInt(c.temperatureC) : '15') + '&nbsp;°C', lk.values, u, up);
     }
-    if (!lk.interpolated) return stepRow(p0 + axesText(lk, lk.corners[0].axisValues), lk.values, u, up);
-    return lk.corners.map(function (c) { return stepRow(p0 + axesText(lk, c.axisValues), c.values, u); }).join('') +
-      stepRow(p0 + 'interpoliert', lk.values, u, up);
+    var extra = lk.axes.slice(2), combos = afmCombos(lk);
+    var grids = combos.map(function (combo) {
+      var cap = [pre].concat(extra.map(function (a, i) {
+        return (AXIS_NAME[a.quantity] ? AXIS_NAME[a.quantity] + ' ' : '') + axisValueText(a, combo[i]);
+      })).filter(Boolean).join(' · ');
+      return afmTable(lk, combo, cap, combos.length > 1 ? afmValue(lk, combo) : lk.values);
+    }).join('');
+    var h = '<tr class="perf-steps-afm"><td colspan="3">' + grids + '</td></tr>';
+    if (pre && combos.length < 2) return h;
+    var more = extra.filter(function (a) { return a.interpolated; });
+    var label = more.length ? 'interpoliert für ' + more.map(axisInputText).join(' / ')
+      : (lk.interpolated ? 'interpoliert' : 'Tabellenwert');
+    return h + stepRow(p0 + label, lk.values, u, up);
   }
 
   // Standardtemperatur der Tabelle (E3) und Abweichung, vor der Ablesung:
@@ -1052,6 +1172,22 @@
     return '× ' + fmtExact(w.factor) + ' (AFM' + how + up + ')';
   }
 
+  // Ausschnitt der Gegenwind-Faktortabelle (E4, VERSION 10), eine Zeile wie der Tabellenausschnitt: die zwei Stützpunkte,
+  // dazwischen blau der Gegenwind, im Schnittpunkt fett der verwendete Faktor; genau auf einem Stützpunkt bzw. über dem
+  // letzten nur dieser (blau). Werte aus der Rechnung (w.points, w.factor).
+  function factorTableRow(w) {
+    var pts = w.points || [];
+    if (!pts.length) return '';
+    var cols = pts.length === 2
+      ? [{ label: fmtInt(pts[0][0]) + '&nbsp;kt', f: pts[0][1] }, { label: fmtInt(w.kt) + '&nbsp;kt', x: true }, { label: fmtInt(pts[1][0]) + '&nbsp;kt', f: pts[1][1] }]
+      : [{ label: fmtInt(pts[0][0]) + '&nbsp;kt', x: true }];
+    return '<tr class="perf-steps-afm"><td colspan="3"><table class="perf-afm"><thead><tr><th class="perf-afm-cap" scope="col">Gegenwind</th>' +
+      cols.map(function (c) { return '<th scope="col"' + (c.x ? ' class="perf-afm-in"' : '') + '>' + c.label + '</th>'; }).join('') +
+      '</tr></thead><tbody><tr><th scope="row" class="perf-afm-in">Faktor</th>' +
+      cols.map(function (c) { return c.x ? '<td class="perf-afm-x">' + fmtExact(w.factor) + '</td>' : '<td class="perf-afm-in">' + fmtExact(c.f) + '</td>'; }).join('') +
+      '</tr></tbody></table></td></tr>';
+  }
+
   // Grösster Tabellenwind (Gegenwind als Tabellenachse, E2) einer Ablesung, sonst null
   function maxTableWind(lk) {
     var src = lk && lk.mass ? lk.mass.upper : lk, v = null;
@@ -1096,12 +1232,13 @@
 
   // Schritte einer Phase. Alle Werte stammen aus der Rechnung (p). Aus den Flugzeugdaten (ch) kommt nur bei der
   // Prozentregel des Winds deren Satz je kt (das Ergebnis der Rechnung enthält nur das abgerundete Prozent).
-  // Ablesung: die verwendeten Tabellenzellen und, wo interpoliert wird, der Wert dazwischen; bei Interpolation im
-  // Gewicht zuerst die schwerere, dann die leichtere Tabelle und zuletzt der Wert für das Gewicht.
+  // Ablesung: die Legende, der Tabellenausschnitt und der Wert daraus; bei Interpolation im Gewicht zuerst der Ausschnitt
+  // der schwereren, dann der leichteren Tabelle und zuletzt der Wert für das Gewicht.
   function stepRows(p, ch) {
     var h = '';
     var u = p.unit, lk = p.lookup, last = lastStep(p), w = p.wind;
     h += stdRow(lk);
+    if (!(lk.mass ? lk.mass.upper : lk).point) h += noteRow('AFM-Tabelle in ' + u + ': ' + TEXT.calcAfm);
     if (lk.mass) {
       var mm = lk.mass;
       h += lookupRows(mm.upper, u, fmtInt(mm.upperKg) + '&nbsp;kg', false) +
@@ -1123,6 +1260,7 @@
       var s = 'Gegenwind ' + w.kt + '&nbsp;kt', per = (w.per === 1 ? '' : fmtExact(w.per) + '&nbsp;') + 'kt';
       if (w.type === 'factorTable') {
         s += ' ' + factorTableText(w);
+        h += factorTableRow(w);
       } else if (w.type === 'percentPer') {
         var rule = headwindRule(ch);
         var pct = rule && rule.type === 'percentPer' ? Math.abs(rule.percent) : null;

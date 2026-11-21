@@ -1,9 +1,12 @@
-// Tests für Teile von index.html (EDSF-Seite), Stand 20.11.2026:
+// Tests für Teile von index.html (EDSF-Seite), Stand 21.11.2026:
 // – Schnittstelle window.EDSF_WX für den Start-/Landestreckenrechner (edsfWx, renderWetter, renderFallback)
 // – Kopfknopf «Briefing» (wie LSZK seit 20.11.2026; das Detail-Fenster bleibt «KI-Briefing»)
 // – Seitenwind-Farben des Pistendiagramms in kt (wie LSZK seit 18.11.2026: grün bis 5 kt, gelb bis 10 kt, sonst rot)
 // – DABS-Liste im KI-Briefing: Zeiten mit «LT», beendete Einträge grau mit «· beendet», «(n beendet)», «Keine weiteren …»
-// – Einbindung des Rechners (Box nach der Ampel, Skripte ?v=, GoatCounter am Ende, Flugzeughalle unverändert)
+// – Einbindung des Rechners (Box nach der Ampel, Skripte ?v=, GoatCounter am Ende, Sichtschutz der Flugzeughalle unverändert)
+// – Flugzeughalle: Alter und Statuspunkt aus data/cam-status.json unter dem Schlüssel «halle», ohne Adresse in der Seite;
+//   Secret HALLE_SRC nur im Statusschritt des Workflows (21.11.2026). Den Statusjob selbst (scripts/update_cam_status.py)
+//   prüft der Pyodide-Test tools\halle\status_test.html im lokalen Projektordner (hier gibt es kein Python).
 // Die Funktionen stehen in index.html: Der Test schneidet sie heraus und ruft sie mit gestellter Uhr auf (wie die
 // LSZK-Tests, z. B. tests/fgzo-chip.test.js im Repo LSZK-Webcams).
 // Aufruf im Repo-Root: node --test
@@ -445,4 +448,216 @@ test('index.html: einheitliche Zeilenenden (nur CRLF oder nur LF), ohne BOM; Flu
   let m, n = 0;
   while ((m = re.exec(SRC))) { n++; assert.doesNotThrow(() => new Function(m[1]), 'Skript ' + n); }
   assert.ok(n >= 2);
+});
+
+/* ── Flugzeughalle: Alter und Statuspunkt ohne Adresse (21.11.2026) ──
+   Die Bildadresse steht nicht in der Seite (verschlüsselt seit 16.11.2026). Der Status-Job kennt sie aus dem GitHub-Secret
+   HALLE_SRC und schreibt den Status unter dem Schlüssel «halle» nach data/cam-status.json; die Karte liest ihn über
+   data-status-key, gesperrt wie entsperrt. Die Statusfunktionen werden aus index.html herausgeschnitten und mit einer
+   nachgebauten Karte aufgerufen (Uhr gestellt, Image nur protokolliert). */
+const CAM_CODE = cut('    function pad(n) {', '    var visible = new Set();');
+function camWorld() {
+  const created = [];
+  class FakeImage { constructor() { created.push(this); } }
+  const api = new Function('Image', 'Date', 'fetch', CAM_CODE +
+    '\nreturn { statusKey: statusKey, applyStatusToCam: applyStatusToCam, needsReload: needsReload, loadImg: loadImg,' +
+    ' setStatus: function (s) { camStatus = s; } };')(FakeImage, FakeDate, () => { throw new Error('kein Netz im Test'); });
+  return { api, created };
+}
+function classes(init) {
+  const s = new Set(init);
+  return { add: (...c) => c.forEach((x) => s.add(x)), remove: (...c) => c.forEach((x) => s.delete(x)), contains: (c) => s.has(c), list: () => [...s].sort() };
+}
+function camCard(attrs) {
+  const ts = { textContent: 'alt', title: '' };
+  const dot = { classList: classes(['status-dot', 'age-unknown']) };
+  const container = { classList: classes(['media-container', 'loaded']) };
+  const card = { querySelector: (sel) => (sel === '.cam-timestamp' ? ts : (sel === '.status-dot' ? dot : null)) };
+  const img = {
+    attrs: Object.assign({}, attrs), dataset: {}, style: {}, classList: classes(['live-cam']), src: 'data:',
+    getAttribute(n) { return Object.prototype.hasOwnProperty.call(this.attrs, n) ? this.attrs[n] : null; },
+    setAttribute(n, v) { this.attrs[n] = v; },
+    closest(sel) { return sel === '.cam-card' ? card : (sel === '.media-container' ? container : null); }
+  };
+  return { img, ts, dot };
+}
+const HALLE_CARD = cut('      <div class="cam-card" id="halle-card">', '    <h2 class="section-title">Umgebung</h2>');
+
+test('Flugzeughalle: Karte ohne Adresse, nur data-status-key «halle»; Secret nur im Schritt «Refresh cam status»', () => {
+  assert.ok(HALLE_CARD.includes('<img class="live-cam" data-status-key="halle" src="data:image/gif;base64,'), HALLE_CARD);
+  assert.ok(!/data-src|data-locksrc|wsrv|https?:|\.jpe?g|href=/i.test(HALLE_CARD), 'Adresse oder Adressattribut in der Hallenkarte');
+  assert.ok(HALLE_CARD.includes('<span class="status-dot age-unknown"></span>') && !HALLE_CARD.includes('Keine Altersprüfung'), HALLE_CARD);
+  assert.deepEqual(SRC.match(/<[a-z]+\b[^<>]*\bdata-status-key="[^"]*"/g).map((t) => /data-status-key="([^"]*)"/.exec(t)[1]), ['halle'],
+    'nur das Bild der Halle hat einen eigenen Statusschlüssel');
+  // Workflow: das Secret genau einmal, nur im Statusschritt; einziger Auslöser workflow_dispatch (keine Läufe aus Pull Requests)
+  const wf = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'update-cam-status.yml'), 'utf8').replace(/\r\n/g, '\n');
+  assert.equal((wf.match(/secrets\.HALLE_SRC/g) || []).length, 1, 'das Secret genau einmal');
+  assert.equal((wf.match(/^\s*HALLE_SRC:/gm) || []).length, 1, 'genau eine Umgebungsvariable HALLE_SRC');
+  assert.ok(wf.includes('      - name: Refresh cam status\n        env:\n          HALLE_SRC: ${{ secrets.HALLE_SRC }}\n        run: python scripts/update_cam_status.py\n'), wf);
+  assert.ok(/^on:\n  workflow_dispatch:\n\n/m.test(wf) && (wf.match(/^on:/gm) || []).length === 1, 'Auslöser');
+  const py = fs.readFileSync(path.join(ROOT, 'scripts', 'update_cam_status.py'), 'utf8');
+  assert.ok(py.includes('HALLE_KEY = "halle"') && py.includes('HALLE_ENV = "HALLE_SRC"') && py.includes('targets.append((HALLE_KEY, halle, HALLE_KEY))'));
+});
+
+test('Flugzeughalle: Alter und Punkt aus «halle» – gesperrt ohne Bild, entsperrt mit Bild; andere Kameras wie bisher über die Adresse', () => {
+  const { api, created } = camWorld();
+  const hall = camCard({ 'data-status-key': 'halle' });
+  assert.equal(api.statusKey(hall.img), 'halle');
+  // ohne Eintrag: grau, keine Zeit
+  api.setStatus({});
+  api.applyStatusToCam(hall.img);
+  assert.deepEqual([hall.ts.textContent, hall.dot.classList.list()], ['', ['age-unknown', 'status-dot']]);
+  // Eintrag unter einer Adresse zählt für die Halle nicht
+  api.setStatus({ 'https://wsrv.nl/?url=x.example/cam.jpg': { lastChange: NOW - 2 * MIN } });
+  api.applyStatusToCam(hall.img);
+  assert.equal(hall.ts.textContent, '');
+  // frisch, gelb ab 10 min, rot ab 30 min; Titel mit dem Zeitpunkt
+  [[7, [], 'vor 7 min'], [15, ['age-yellow'], 'vor 15 min'], [35, ['age-red'], 'vor 35 min'], [125, ['age-red'], 'vor 2 h 5 min']].forEach(([m, cls, txt]) => {
+    api.setStatus({ halle: { hash: 'h', lastChange: NOW - m * MIN, source: 'origin' } });
+    api.applyStatusToCam(hall.img);
+    assert.equal(hall.ts.textContent, txt, m + ' min');
+    assert.deepEqual(hall.dot.classList.list(), ['status-dot'].concat(cls).sort(), m + ' min');
+    assert.ok(hall.ts.title.startsWith('Letzter Bildwechsel: 20.11.2026 '), hall.ts.title);
+  });
+  // gesperrt (kein data-src): loadImg lädt kein Bild, setzt aber Alter und Punkt; nachladen bleibt fällig (der Punkt folgt jedem Abruf)
+  api.setStatus({ halle: { hash: 'h', lastChange: NOW - 3 * MIN, source: 'bot' } });
+  hall.ts.textContent = 'alt';
+  api.loadImg(hall.img, NOW);
+  assert.deepEqual([created.length, hall.ts.textContent, hall.img.dataset.loadedChange], [0, 'vor 3 min', undefined]);
+  assert.equal(api.needsReload(hall.img), true);
+  // entsperrt (reveal setzt data-src): Bild laden, als geladen merken unter «halle»; neu laden erst nach einem Bildwechsel
+  hall.img.setAttribute('data-src', 'https://wsrv.nl/?url=x.example/halle.jpg');
+  assert.equal(api.statusKey(hall.img), 'halle', 'der eigene Schlüssel gilt auch entsperrt');
+  api.loadImg(hall.img, NOW);
+  assert.equal(created.length, 1);
+  assert.ok(created[0].src.startsWith('https://wsrv.nl/?url=x.example/halle.jpg&w=900&h=506&fit=cover&output=webp&q=75'), created[0].src);
+  created[0].onload();
+  assert.equal(hall.img.dataset.loadedChange, String(NOW - 3 * MIN));
+  assert.equal(api.needsReload(hall.img), false);
+  api.setStatus({ halle: { hash: 'h2', lastChange: NOW - 1 * MIN, source: 'bot' } });
+  assert.equal(api.needsReload(hall.img), true);
+  // andere Kamera: Schlüssel bleibt die Adresse (data-src), ein Eintrag «halle» gilt für sie nicht
+  const cam = camCard({ 'data-src': 'https://wsrv.nl/?url=www.example.org/cam/cam91.jpg' });
+  assert.equal(api.statusKey(cam.img), 'https://wsrv.nl/?url=www.example.org/cam/cam91.jpg');
+  api.setStatus({ halle: { lastChange: NOW - 1 * MIN }, 'https://wsrv.nl/?url=www.example.org/cam/cam91.jpg': { lastChange: NOW - 12 * MIN } });
+  api.applyStatusToCam(cam.img);
+  assert.deepEqual([cam.ts.textContent, cam.dot.classList.list()], ['vor 12 min', ['age-yellow', 'status-dot']]);
+  // Bild ohne Schlüssel (weder data-src noch data-status-key): nichts geändert
+  const none = camCard({});
+  api.applyStatusToCam(none.img);
+  assert.deepEqual([none.ts.textContent, none.dot.classList.list()], ['alt', ['age-unknown', 'status-dot']]);
+});
+
+/* Ganzer Kamerablock im Ablauf (nach der Integrationsprobe des Prüfers vom 21.11.2026): erste Statusrunde, Sichtbarkeit
+   (IntersectionObserver), Takt von refreshCams, Entsperren wie reveal(); DOM, fetch, Takt und Uhr nachgebaut. */
+const CAM_BLOCK = (() => {
+  const lf = SRC.replace(/\r\n/g, '\n');
+  const from = '    /* ── Kamera-Refresh', to = "    (function() {\n      var bar = document.getElementById('sunrise-bar');";
+  const a = lf.indexOf(from), b = lf.indexOf(to, a);
+  if (a < 0 || b < 0 || lf.indexOf(from, a + 1) >= 0) throw new Error('Kamerablock in index.html nicht gefunden');
+  return lf.slice(a, b);
+})();
+const PUB_KEY = 'https://wsrv.nl/?url=www.example.org/cam/cam91.jpg';
+function camBlock(clock) {
+  class TickDate extends Date { constructor(...a) { if (a.length) super(...a); else super(clock.now); } static now() { return clock.now; } }
+  function card(attrs) {
+    const header = { dot: { classList: classes(['status-dot']) }, ts: null };
+    header.querySelector = (sel) => (sel === '.cam-timestamp' ? header.ts : (sel === '.status-dot' ? header.dot : null));
+    header.insertBefore = (span) => { header.ts = span; };
+    header.appendChild = (span) => { header.ts = span; };
+    const container = { classList: classes(['media-container']) };
+    const c = { querySelector: header.querySelector };
+    const img = {
+      tagName: 'IMG', attrs: Object.assign({}, attrs), dataset: {}, style: {}, classList: classes(['live-cam']), src: 'data:',
+      getAttribute(n) { return Object.prototype.hasOwnProperty.call(this.attrs, n) ? this.attrs[n] : null; },
+      setAttribute(n, v) { this.attrs[n] = v; },
+      closest(sel) { return sel === '.cam-card' ? c : (sel === '.media-container' ? container : null); }
+    };
+    return { img, header };
+  }
+  const hall = card({ 'data-status-key': 'halle' });
+  hall.header.dot.classList.add('age-unknown');
+  const pub = card({ 'data-src': PUB_KEY });
+  const created = [], pending = [], intervals = [];
+  let status = {}, ioCb = null;
+  class FakeImage { constructor() { created.push(this); } }
+  class IO { constructor(cb) { ioCb = cb; } observe() {} }
+  const document = {
+    hidden: false,
+    getElementById: () => null,
+    createElement: () => ({ className: '', textContent: '', title: '' }),
+    querySelectorAll: (sel) => (sel === '.cam-header' ? [hall.header, pub.header] : (sel === 'img.live-cam' ? [hall.img, pub.img] : [])),
+    addEventListener: () => {}
+  };
+  const fetchFn = () => new Promise((res) => pending.push(() => res({ ok: true, json: () => JSON.parse(JSON.stringify(status)) })));
+  const env = { Image: FakeImage, Date: TickDate, fetch: fetchFn, IntersectionObserver: IO, document, setInterval: (f) => intervals.push(f),
+    ai: { loadedAt: clock.now }, loadAi: () => {} };
+  const api = {};
+  new Function(...Object.keys(env), CAM_BLOCK + '\nthis.loadImg = loadImg;').call(api, ...Object.values(env));
+  return {
+    hall, pub, created,
+    setStatus(s) { status = s; },
+    async flush() { while (pending.length) { pending.shift()(); await new Promise((r) => setImmediate(r)); } },
+    see(el) { ioCb([{ isIntersecting: true, target: el }]); },
+    tick() { intervals.forEach((f) => f()); },
+    // wie reveal() im Abschnitt «Flugzeughalle»
+    unlock() { hall.img.setAttribute('data-src', 'https://wsrv.nl/?url=x.example/h.jpg'); hall.img.dataset.initialized = '1'; api.loadImg(hall.img, clock.now); }
+  };
+}
+const shownCam = (c) => [c.header.ts.textContent, c.header.dot.classList.list().join(' ')];
+
+test('Flugzeughalle im Ablauf: gesperrt erste Runde und Takt; Entsperren, Bildwechsel, Ladefehler, gemerkter Schlüssel', async () => {
+  const clock = { now: NOW };
+  // gesperrt: Zeit und Punkt aus «halle», kein Bild, der Punkt folgt jedem Takt
+  const w = camBlock(clock);
+  w.setStatus({ halle: { lastChange: clock.now - 3 * MIN }, [PUB_KEY]: { lastChange: clock.now - 12 * MIN } });
+  await w.flush();
+  assert.deepEqual(shownCam(w.hall), ['vor 3 min', 'status-dot'], 'erste Runde: Halle');
+  assert.deepEqual(shownCam(w.pub), ['vor 12 min', 'age-yellow status-dot'], 'erste Runde: andere Kamera');
+  assert.equal(w.hall.img.dataset.loadedChange, undefined, 'gesperrte Halle: nichts als geladen gemerkt');
+  w.see(w.hall.img);
+  w.see(w.pub.img);
+  assert.deepEqual(w.created.map((i) => i.src.split('&')[0]), [PUB_KEY], 'sichtbar: nur die andere Kamera lädt ein Bild');
+  w.created[0].onload();
+  clock.now += 20 * MIN;
+  w.tick(); await w.flush();
+  assert.deepEqual([shownCam(w.hall), w.created.length], [['vor 23 min', 'age-yellow status-dot'], 1], 'Takt ohne Bildwechsel');
+  w.setStatus({ halle: { lastChange: clock.now - 1 * MIN }, [PUB_KEY]: { lastChange: clock.now - 32 * MIN } });
+  w.tick(); await w.flush();
+  assert.deepEqual(shownCam(w.hall), ['vor 1 min', 'status-dot'], 'Takt mit Bildwechsel');
+  w.setStatus({ [PUB_KEY]: { lastChange: clock.now - 32 * MIN } });
+  w.tick(); await w.flush();
+  assert.deepEqual(shownCam(w.hall), ['', 'age-unknown status-dot'], 'Eintrag fehlt (kein Secret): grau, ohne Zeit');
+  // entsperrt nach der ersten Runde: Bild laden, danach nur nach einem Bildwechsel neu
+  const v = camBlock(clock);
+  v.setStatus({ halle: { lastChange: clock.now - 3 * MIN } });
+  await v.flush();
+  v.see(v.hall.img);
+  v.unlock();
+  assert.equal(v.created.length, 1, 'Entsperren lädt das Bild');
+  v.created[0].onload();
+  assert.equal(v.hall.img.dataset.loadedChange, String(clock.now - 3 * MIN), 'als geladen gemerkt unter «halle»');
+  clock.now += 2 * MIN; v.tick(); await v.flush();
+  assert.deepEqual([v.created.length, v.hall.header.ts.textContent], [1, 'vor 5 min'], 'Takt ohne Bildwechsel: nicht neu laden');
+  v.setStatus({ halle: { lastChange: clock.now - 0.5 * MIN } });
+  v.tick(); await v.flush();
+  assert.equal(v.created.length, 2, 'Takt mit Bildwechsel: genau ein neues Bild');
+  // Ladefehler beim ersten Bild nach dem Entsperren: der nächste Takt versucht es neu
+  const x = camBlock(clock);
+  x.setStatus({ halle: { lastChange: clock.now - 3 * MIN } });
+  await x.flush();
+  x.see(x.hall.img);
+  x.unlock();
+  x.created[0].onerror();
+  clock.now += 2 * MIN; x.tick(); await x.flush();
+  assert.equal(x.created.length, 2, 'nach dem Ladefehler neuer Versuch');
+  // gemerkter Schlüssel: Entsperren vor der ersten Statusrunde; danach kein unnötiges Nachladen
+  const y = camBlock(clock);
+  y.setStatus({ halle: { lastChange: clock.now - 3 * MIN } });
+  y.unlock();
+  y.created[0].onload();
+  await y.flush();
+  y.see(y.hall.img);
+  clock.now += 1 * MIN; y.tick(); await y.flush();
+  assert.deepEqual([y.created.length, y.hall.img.dataset.loadedChange], [1, String(clock.now - 4 * MIN)], 'gemerkter Schlüssel');
 });

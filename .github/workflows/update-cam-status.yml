@@ -27,7 +27,12 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
+      # HALLE_SRC: Bildadresse der Flugzeughalle (Repository-Secret, nur für diesen Schritt). Sie steht weder in der Seite
+      # noch im Repo; der Status landet unter dem Schlüssel «halle» in data/cam-status.json. Ohne Secret: kein Eintrag.
+      # Wert: https://wsrv.nl/?url=<host>/<pfad>.jpg (wie HALLE_SRC in tools/halle, lokal) oder die direkte http(s)-Adresse.
       - name: Refresh cam status
+        env:
+          HALLE_SRC: ${{ secrets.HALLE_SRC }}
         run: python scripts/update_cam_status.py
 
       # DABS (skybriefing.com) für das KI-Briefing: nur wenn fällig, ein Versuch je Lauf, Ergebnis in data/dabs.json.

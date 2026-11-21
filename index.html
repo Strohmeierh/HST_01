@@ -1077,14 +1077,16 @@
         </div>
       </div>
 
-      <!-- Flugzeughalle: Die Bildadresse steht absichtlich nicht im Quelltext (verschlüsselt im Skript, Abschnitt «Flugzeughalle»). -->
+      <!-- Flugzeughalle: Die Bildadresse steht absichtlich nicht im Quelltext (verschlüsselt im Skript, Abschnitt «Flugzeughalle»).
+           Alter und Statuspunkt kommen aus data/cam-status.json unter dem Schlüssel «halle» (data-status-key); der Status-Job
+           kennt die Adresse aus dem GitHub-Secret HALLE_SRC. -->
       <div class="cam-card" id="halle-card">
         <div class="cam-header">
           <a target="_blank" rel="noopener">EDSF – Flugzeughalle</a>
-          <span class="status-dot age-unknown" title="Keine Altersprüfung (Bildadresse verschlüsselt)"></span>
+          <span class="status-dot age-unknown"></span>
         </div>
         <div class="media-container loaded">
-          <img class="live-cam" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="640" height="360" alt="EDSF Flugzeughalle">
+          <img class="live-cam" data-status-key="halle" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="640" height="360" alt="EDSF Flugzeughalle">
           <div class="lock-overlay" id="halle-lock">
             <div class="lock-box">
               <div class="lock-title">🔒 Flugzeughalle</div>
@@ -1405,6 +1407,12 @@
 
     var camStatus = {};
 
+    // Schlüssel in data/cam-status.json: die Bildadresse (data-src); die Flugzeughalle hat data-status-key="halle", weil ihre
+    // Adresse nicht in der Seite steht (der Status-Job kennt sie aus einem GitHub-Secret)
+    function statusKey(img) {
+      return img.getAttribute('data-status-key') || img.getAttribute('data-src');
+    }
+
     function refreshCamStatus(ts) {
       return fetch('data/cam-status.json?t=' + ts, { cache: 'no-store' })
         .then(function(r) { return r.ok ? r.json() : {}; })
@@ -1443,12 +1451,12 @@
     }
 
     function applyStatusToCam(img) {
-      var base = img.getAttribute('data-src');
-      if (!base) return;
+      var key = statusKey(img);
+      if (!key) return;
       var card = img.closest('.cam-card');
       var tsEl = card ? card.querySelector('.cam-timestamp') : null;
       var dot  = card ? card.querySelector('.status-dot')   : null;
-      var entry = camStatus[base];
+      var entry = camStatus[key];
       if (entry && entry.lastChange) {
         applyAgeUI(tsEl, dot, entry.lastChange);
       } else {
@@ -1461,7 +1469,7 @@
     }
 
     // Anzeigegrösse fürs Grid: wsrv.nl skaliert/croppt serverseitig auf 16:9.
-    // data-src bleibt unverändert (Status-Keys + update_cam_status.py kompatibel);
+    // data-src bleibt unverändert (Status-Schlüssel, siehe statusKey, und update_cam_status.py kompatibel);
     // die Lightbox lädt weiterhin das Original ohne Resize.
     var DISPLAY_PARAMS = '&w=900&h=506&fit=cover&output=webp&q=75';
     function displayUrl(base) {
@@ -1470,7 +1478,7 @@
 
     function loadImg(img, ts) {
       var base = img.getAttribute('data-src');
-      if (!base) return;
+      if (!base) { applyStatusToCam(img); return; }   // gesperrte Flugzeughalle: kein Bild, aber Alter und Punkt
 
       var container = img.closest('.media-container');
       container.classList.remove('loaded');
@@ -1482,7 +1490,7 @@
         img.style.objectFit = '';
         img.classList.add('loaded');
         container.classList.add('loaded');
-        var e = camStatus[base];
+        var e = camStatus[statusKey(img)];
         img.dataset.loadedChange = (e && e.lastChange) ? String(e.lastChange) : '';
       };
       fresh.onerror = function() {
@@ -1491,7 +1499,7 @@
         img.classList.add('loaded');
         container.classList.add('loaded');
       };
-      // data-crop: Ausschnitt eines Panoramas (nur Anzeige; data-src bleibt der Status-Schlüssel)
+      // data-crop: Ausschnitt eines Panoramas (nur Anzeige; der Status-Schlüssel bleibt statusKey(img))
       fresh.src = bust(displayUrl(base + (img.dataset.crop ? '&' + img.dataset.crop : '')), ts);
 
       applyStatusToCam(img);
@@ -1500,8 +1508,7 @@
     // P1: nur neu laden, wenn die Quelle sich nachweislich geändert hat.
     // Ohne Status-Eintrag (unbekannt) wie bisher zeitbasiert nachladen.
     function needsReload(img) {
-      var base = img.getAttribute('data-src');
-      var entry = camStatus[base];
+      var entry = camStatus[statusKey(img)];
       if (!entry || !entry.lastChange) return true;
       return String(entry.lastChange) !== (img.dataset.loadedChange || '');
     }
@@ -1548,9 +1555,9 @@
     refreshCamStatus(ts0).then(function(data) {
       camStatus = data;
       imgs.forEach(function (img) {
-        var base = img.getAttribute('data-src');
-        var e = camStatus[base];
-        if (e && e.lastChange) img.dataset.loadedChange = String(e.lastChange);
+        var e = camStatus[statusKey(img)];
+        // nur mit Bildadresse als geladen merken; die gesperrte Flugzeughalle lädt kein Bild, ihr Punkt folgt jedem Abruf
+        if (e && e.lastChange && img.getAttribute('data-src')) img.dataset.loadedChange = String(e.lastChange);
         applyStatusToCam(img);
       });
     });

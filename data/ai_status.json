@@ -1,21 +1,21 @@
 {
   "stats": {
     "month": "2026-11",
-    "cost_month_usd": 7.1981,
+    "cost_month_usd": 7.0494,
     "attempts_month": 29,
     "date": "2026-11-25",
-    "cost_today_usd": 0.6538,
+    "cost_today_usd": 0.5051,
     "attempts_today": 2,
     "budget_month_usd": 60.0,
-    "reserved_usd": 0.4
+    "reserved_usd": 0.0
   },
   "schema_version": 1,
-  "ok": false,
+  "ok": true,
   "attempted_at_utc": "2026-11-25T10:00:48+00:00",
   "slot": "11:00",
   "reserved_run": "45590590650.1",
-  "fail_streak": 1,
-  "error": "Versuch läuft oder wurde abgebrochen (kein Ergebnis gespeichert)",
+  "fail_streak": 0,
+  "error": null,
   "sun": {
     "rise": "07:47",
     "set": "16:43"
@@ -23,9 +23,9 @@
   "dabs": {
     "ok": true,
     "datum": "2026-11-25",
-    "version": 1,
-    "stand_utc": "2026-11-24T14:48:00+00:00",
-    "abgerufen_utc": "2026-11-25T04:05:47+00:00",
+    "version": 2,
+    "stand_utc": "2026-11-25T07:45:00+00:00",
+    "abgerufen_utc": "2026-11-25T08:00:54+00:00",
     "quelle": "https://www.skybriefing.com/o/dabs?today",
     "filter": "Fluggebiet Hochrhein–Schaffhausen–Birrfeld–Jurasüdfuss–La Chaux-de-Fonds–Ajoie–Basel mit 10 km Marge, Untergrenze unter FL150, bis 30 min nach Sonnenuntergang",
     "eintraege_total": 13,
@@ -38,7 +38,7 @@
   },
   "edr": {
     "ok": true,
-    "abgerufen_utc": "2026-11-25T07:10:44+00:00",
+    "abgerufen_utc": "2026-11-25T10:00:53+00:00",
     "quelle": "https://www.dipul.de/homepage/de/informationen/geografische-gebiete/wfs-wms/",
     "lizenz": "dipul, CC BY-ND 4.0",
     "filter": "Schwarzwald, Baar und Schwäbische Alb (Lörrach–Offenburg–Pforzheim–Tübingen–Sigmaringen–Waldshut) mit 15 km Marge, nur § 17 LuftVO, Untergrenze unter FL150, bis 30 min nach Sonnenuntergang",
@@ -60,32 +60,28 @@
       "Klippeneck – Panorama",
       "Raichberg",
       "Flugplatz Schupfart",
-      "Passwang"
+      "Passwang",
+      "Weissenstein"
     ],
-    "fehlend": [
-      {
-        "titel": "Weissenstein",
-        "grund": "Bild seit 15 h 23 min unverändert (Kamera eingefroren?)"
-      }
-    ],
+    "fehlend": [],
     "fehler": [
       "Heuberg B (XContest): ValueError: Aktivierungsdaten von XContest sind abgelaufen"
     ],
     "station": "live"
   },
   "usage": {
-    "input_tokens": 35555,
-    "output_tokens": 5580,
+    "input_tokens": 37197,
+    "output_tokens": 5128,
     "cache_creation_input_tokens": 0,
     "cache_read_input_tokens": 0,
     "attempts": 1,
-    "cost_usd": 0.2538
+    "cost_usd": 0.2513
   },
   "served_by": "claude-opus-5-5",
-  "request_id": "req_011ChPEERSCsX8mYRUMCGMd5",
-  "generated_at_utc": "2026-11-25T07:10:44+00:00",
+  "request_id": "req_011ChPTEDVNTa5ekokHQoNUb",
+  "generated_at_utc": "2026-11-25T10:00:53+00:00",
   "model": "claude-opus-5-5",
-  "slot_planned_utc": "2026-11-25T07:10:00+00:00",
+  "slot_planned_utc": "2026-11-25T10:00:00+00:00",
   "effort": "medium",
   "korrekturen": [],
   "thermik": {
@@ -110,7 +106,7 @@
         "basis_m": null,
         "blau": null,
         "grund": "Auslösetemperatur wird nicht erreicht",
-        "ausloesetemp_c": 8.9,
+        "ausloesetemp_c": 8.5,
         "cape_max": 0,
         "risiko": "gering",
         "wind_kt": 10,
@@ -129,11 +125,11 @@
         "basis_m": null,
         "blau": null,
         "grund": "Auslösetemperatur wird nicht erreicht",
-        "ausloesetemp_c": 8.1,
+        "ausloesetemp_c": 8.0,
         "cape_max": 0,
         "risiko": "gering",
-        "wind_kt": 8,
-        "wind_dir": 225,
+        "wind_kt": 10,
+        "wind_dir": 165,
         "wind_stark": false
       },
       {
@@ -148,11 +144,11 @@
         "basis_m": null,
         "blau": null,
         "grund": "Auslösetemperatur wird nicht erreicht",
-        "ausloesetemp_c": 9.0,
+        "ausloesetemp_c": 9.1,
         "cape_max": 0,
         "risiko": "gering",
         "wind_kt": 10,
-        "wind_dir": 138,
+        "wind_dir": 266,
         "wind_stark": false
       },
       {
@@ -167,11 +163,11 @@
         "basis_m": null,
         "blau": null,
         "grund": "Auslösetemperatur wird nicht erreicht",
-        "ausloesetemp_c": 10.0,
+        "ausloesetemp_c": 9.7,
         "cape_max": 0,
         "risiko": "gering",
-        "wind_kt": 10,
-        "wind_dir": 98,
+        "wind_kt": 8,
+        "wind_dir": 90,
         "wind_stark": false
       },
       {
@@ -186,11 +182,11 @@
         "basis_m": null,
         "blau": null,
         "grund": "Auslösetemperatur wird nicht erreicht",
-        "ausloesetemp_c": 9.3,
+        "ausloesetemp_c": 9.2,
         "cape_max": 0,
         "risiko": "gering",
-        "wind_kt": 7,
-        "wind_dir": 318,
+        "wind_kt": 9,
+        "wind_dir": 286,
         "wind_stark": false
       },
       {
@@ -205,11 +201,11 @@
         "basis_m": null,
         "blau": null,
         "grund": "Auslösetemperatur wird nicht erreicht",
-        "ausloesetemp_c": 10.7,
+        "ausloesetemp_c": 10.4,
         "cape_max": 0,
         "risiko": "gering",
-        "wind_kt": 6,
-        "wind_dir": 225,
+        "wind_kt": 10,
+        "wind_dir": 221,
         "wind_stark": false
       },
       {
@@ -228,7 +224,7 @@
         "cape_max": 0,
         "risiko": "gering",
         "wind_kt": 14,
-        "wind_dir": 150,
+        "wind_dir": 154,
         "wind_stark": false
       },
       {
@@ -243,11 +239,11 @@
         "basis_m": null,
         "blau": null,
         "grund": "Auslösetemperatur wird nicht erreicht",
-        "ausloesetemp_c": 9.8,
+        "ausloesetemp_c": 10.1,
         "cape_max": 0,
         "risiko": "gering",
-        "wind_kt": 10,
-        "wind_dir": 261,
+        "wind_kt": 12,
+        "wind_dir": 211,
         "wind_stark": false
       },
       {
@@ -262,50 +258,50 @@
         "basis_m": null,
         "blau": null,
         "grund": "Auslösetemperatur wird nicht erreicht",
-        "ausloesetemp_c": 7.3,
+        "ausloesetemp_c": 7.7,
         "cape_max": 0,
         "risiko": "gering",
         "wind_kt": 20,
-        "wind_dir": 213,
+        "wind_dir": 210,
         "wind_stark": true
       }
     ]
   },
   "briefing": {
-    "headline": "Stark bewölkt, Basis über 1.500 m MSL, Regen ab Mittag",
-    "text": "Wind 090°/13 kt, Böen 16 kt, 0,3 °C. Sicht 33 km (Kettenjura), stark bewölkt, mittelhohe Schicht, Basis über 1.500 m MSL (mehr als 600 m über Platz), Feldberg und Belchen frei. Nebelmeer in der Rheinebene bis ca. 600 m MSL, Fricktal trüb, Baar und Alb dunstig unter hoher Bewölkung. Prognose: Regen wahrscheinlich gegen Mittag (58 % in den nächsten 3 h), ab 13 Uhr Sicht stark abnehmend mit Nebel oder tiefen Wolken bis gegen 16 Uhr, danach bedeckt. Keine nutzbare Thermik.",
+    "headline": "Bedeckt, Basis um 1.800 m MSL, Hochnebel in Tälern",
+    "text": "Wind 091°/2 kt, 2,3 °C, Spreizung 1,8 K. Bedeckt, Basis um 1.800 m MSL (rund 920 m über Platz), Sicht 33 km (Belchenflue). Schwarzwaldkämme bis Feldberg frei, Hochnebel in Rheinebene, Hochrheintal und Mittelland bis rund 900 m MSL. Prognose: Regenwahrscheinlichkeit 70 % in den nächsten 3 h, Regen wahrscheinlich, um 14 Uhr Sicht um 1 km möglich, um 15 Uhr aufgelockert, ab 16 Uhr wieder bedeckt. Keine nutzbare Thermik.",
     "lage": "maessig"
   },
   "himmel": {
     "bedeckung_achtel": 7,
-    "wolkenbasis_m": null,
-    "basis_quelle": "unbekannt",
-    "sicht": "gut",
+    "wolkenbasis_m": 1800,
+    "basis_quelle": "kombiniert",
+    "sicht": "maessig",
     "sicht_km": 33,
     "nebel": "hochnebel",
-    "nebel_obergrenze_m": 600,
-    "schneegrenze_m": 1100,
-    "niederschlag": "in_der_ferne",
+    "nebel_obergrenze_m": 900,
+    "schneegrenze_m": 1000,
+    "niederschlag": "kein",
     "regionen": [
       {
         "region": "platz",
-        "zustand": "Fleckige Schneereste auf der Grasfläche, Boden feucht."
+        "zustand": "Hornberg-Rücken frei, Schneereste auf dem Gras."
       },
       {
         "region": "hotzenwald",
-        "zustand": "Hochfläche frei, Fernsicht nach Süden dunstig."
+        "zustand": "Hochnebel im Hochrheintal unterhalb rund 750 m MSL, Juraketten ragen heraus."
       },
       {
         "region": "suedschwarzwald",
-        "zustand": "Höhen frei und schneebedeckt, Täler zur Rheinebene im Nebel."
+        "zustand": "Feldberg, Belchen und Schauinsland frei, geschlossene Schneedecke ab rund 1.000 m MSL; Rheinebene unter Nebelmeer."
       },
       {
         "region": "baar_alb",
-        "zustand": "Albtrauf frei, Vorland dunstig, im Westen dunklere Bewölkung."
+        "zustand": "Baar stark bewölkt, Albvorland am Klippeneck dunstig, über der Zollernalb aufgelockert mit hoher Bewölkung."
       },
       {
         "region": "hochrhein_jura",
-        "zustand": "Fricktal unter grauer, geschlossener Schicht, Sicht nach Norden eingeschränkt."
+        "zustand": "Jurakämme frei über dem Nebelmeer, Alpen sichtbar; Hotzenwald-Südrand von Schupfart aus frei."
       }
     ]
   },
@@ -314,7 +310,7 @@
       "titel": "EDSF – Start Piste 11",
       "key": "https://wsrv.nl/?url=www.lgh-platz.de/cam/cam61.jpg",
       "bildalter_min": 10,
-      "satz": "Stark bewölkt, mittelhohe Schicht; Schneereste auf der Piste, Jura im Osten schwach erkennbar.",
+      "satz": "Bedeckt, Baumgruppe und Wald klar, Jura im Osten nur schwach erkennbar; Schneereste auf der Piste.",
       "tags": [
         "bedeckt",
         "schnee"
@@ -325,22 +321,21 @@
       "titel": "EDSF – Flugfeld 1",
       "key": "https://wsrv.nl/?url=www.lgh-platz.de/cam/cam31.jpg",
       "bildalter_min": 1,
-      "satz": "Aufgelockerte bis stark bewölkte mittelhohe Schicht, Dorf und Fernhorizont frei, Schneereste.",
+      "satz": "Bedeckt, Dorf Hütten klar, Hochnebel über dem Hochrheintal; vereinzelte Schneereste.",
       "tags": [
         "bedeckt",
-        "schnee"
+        "hochnebel"
       ],
       "problem": "keins"
     },
     {
       "titel": "EDSF – Flugfeld 3",
       "key": "https://wsrv.nl/?url=www.lgh-platz.de/cam/cam51.jpg",
-      "bildalter_min": 0,
-      "satz": "Stark bewölkt, Kettenjura erkennbar, Nebelband im Hochrheintal, Schneereste auf der Wiese.",
+      "bildalter_min": 151,
+      "satz": "Stand 08:30: bedeckt, Kettenjura schwach über Nebel im Hochrheintal erkennbar.",
       "tags": [
         "bedeckt",
-        "dunst",
-        "schnee"
+        "hochnebel"
       ],
       "problem": "keins"
     },
@@ -348,18 +343,21 @@
       "titel": "EDSF – Blick nach Norden",
       "key": "https://wsrv.nl/?url=www.lgh-platz.de/cam/cam91.jpg",
       "bildalter_min": 1,
-      "satz": "Keine Beobachtung möglich.",
-      "tags": [],
-      "problem": "fehlbild"
+      "satz": "Hornberg-Rücken frei, Basis über 1.050 m MSL; Wiese mit Schneeresten, Zufahrt nass.",
+      "tags": [
+        "bedeckt",
+        "schnee"
+      ],
+      "problem": "keins"
     },
     {
       "titel": "Rickenbach Altenschwand 2",
       "key": "https://wsrv.nl/?url=www.ziis.de/cam/mega.jpg",
-      "bildalter_min": 12,
-      "satz": "Hochfläche frei, Jura nur dunstig, Schneereste auf Dächern.",
+      "bildalter_min": 2,
+      "satz": "Hochnebel über dem Hochrheintal, Juraketten ragen heraus und sind erkennbar; Rickenbach frei.",
       "tags": [
         "bedeckt",
-        "dunst"
+        "hochnebel"
       ],
       "problem": "keins"
     },
@@ -367,7 +365,7 @@
       "titel": "Feldberg Seebuck",
       "key": "https://wsrv.nl/?url=www.feldberger-hof.de/static/webcam/fh-webcam.jpg",
       "bildalter_min": 1,
-      "satz": "Seebuck mit Turm frei, Wolken deutlich darüber, geschlossene Schneedecke.",
+      "satz": "Seebuck mit Feldbergturm frei, Basis über 1.450 m MSL; geschlossene Schneedecke.",
       "tags": [
         "bedeckt",
         "schnee"
@@ -377,11 +375,11 @@
     {
       "titel": "Belchen",
       "key": "https://wsrv.nl/?url=belchen.it-wms.com/panorama1_raw.jpg",
-      "bildalter_min": 8,
-      "satz": "Feldberg und Kämme frei, Nebel in Wiesental und Rheinebene, mittelhohe Bewölkung, Schnee.",
+      "bildalter_min": 29,
+      "satz": "Kämme bis Feldberg frei unter geschlossener Schicht; Nebel in Rheinebene und Tälern, Schnee am Gipfel.",
       "tags": [
         "bedeckt",
-        "nebel",
+        "hochnebel",
         "schnee"
       ],
       "problem": "keins"
@@ -389,10 +387,11 @@
     {
       "titel": "Schauinsland (Bergstation)",
       "key": "wtvpict.feratel.com/picture/35/3212.jpeg",
-      "bildalter_min": 7,
-      "satz": "Nebelmeer in der Rheinebene bis ca. 600 m MSL, Schönberg ragt heraus, Kamera darüber.",
+      "bildalter_min": 5,
+      "satz": "Nebelmeer über der Rheinebene, Schönberg ragt heraus, Vogesen nicht erkennbar; Schnee am Boden.",
       "tags": [
-        "nebel",
+        "bedeckt",
+        "hochnebel",
         "schnee"
       ],
       "problem": "keins"
@@ -400,9 +399,10 @@
     {
       "titel": "Flugplatz Donaueschingen EDTD",
       "key": "https://wsrv.nl/?url=images-webcams.windy.com/10/1471968410/current/original/1471968410.jpg",
-      "bildalter_min": 9,
-      "satz": "Aufgelockert bewölkt, Reif auf dem Gras, Randhöhen dunstig.",
+      "bildalter_min": 5,
+      "satz": "Stark bewölkt mit helleren Lücken, Randhöhen der Baar erkennbar, leicht dunstig.",
       "tags": [
+        "bedeckt",
         "dunst"
       ],
       "problem": "keins"
@@ -410,8 +410,8 @@
     {
       "titel": "Klippeneck – Panorama",
       "key": "https://wsrv.nl/?url=cam.afu-server.de/Klippeneck-CAM1.jpg",
-      "bildalter_min": 31,
-      "satz": "Albtrauf frei, Vorland dunstig, im Westen dunkle Bewölkung.",
+      "bildalter_min": 17,
+      "satz": "Bedeckt, Denkingen erkennbar, Albvorland dunstig, Schwarzwald nicht sichtbar.",
       "tags": [
         "bedeckt",
         "dunst"
@@ -421,10 +421,10 @@
     {
       "titel": "Raichberg",
       "key": "https://wsrv.nl/?url=images-webcams.windy.com/38/1406140938/current/original/1406140938.jpg",
-      "bildalter_min": 5,
-      "satz": "Hohe Schichtbewölkung, Albtrauf frei, Vorland dunstig, Wind schwach aus ONO.",
+      "bildalter_min": 12,
+      "satz": "Hohe dünne Bewölkung mit blauen Lücken, Albtrauf frei, Dunst über dem Vorland.",
       "tags": [
-        "bedeckt",
+        "sonnig",
         "dunst"
       ],
       "problem": "keins"
@@ -432,8 +432,8 @@
     {
       "titel": "Flugplatz Schupfart",
       "key": "https://wsrv.nl/?url=flugplatzschupfart.roundshot.com/cams/632/medium",
-      "bildalter_min": 5,
-      "satz": "Geschlossene graue Schicht, Sicht nach Norden dunstig, Piste grün und nass.",
+      "bildalter_min": 6,
+      "satz": "Bedeckt mit kleinen Lücken, Hotzenwald-Südrand erkennbar, dunstig; Piste grün und schneefrei.",
       "tags": [
         "bedeckt",
         "dunst"
@@ -443,17 +443,30 @@
     {
       "titel": "Passwang",
       "key": "https://wsrv.nl/?url=passwang.roundshot.com/cams/1961/medium",
-      "bildalter_min": 6,
-      "satz": "Jura schneebedeckt, tiefe graue Bewölkung, Alpen verdeckt.",
+      "bildalter_min": 7,
+      "satz": "Nebelmeer über Tälern und Mittelland, Jurakämme und Alpen frei; geschlossene Schneedecke.",
       "tags": [
         "bedeckt",
+        "hochnebel",
         "schnee"
       ],
-      "problem": "linse_nass"
+      "problem": "keins"
+    },
+    {
+      "titel": "Weissenstein",
+      "key": "https://wsrv.nl/?url=hotelweissenstein.roundshot.com/cams/726/medium",
+      "bildalter_min": 7,
+      "satz": "Nebelmeer deutlich unter 1.284 m MSL, Alpen sichtbar, darüber geschlossene Bewölkung; Schnee.",
+      "tags": [
+        "bedeckt",
+        "hochnebel",
+        "schnee"
+      ],
+      "problem": "keins"
     }
   ],
   "heuberg": {
-    "abgerufen_utc": "2026-11-25T07:10:44+00:00",
+    "abgerufen_utc": "2026-11-25T10:00:53+00:00",
     "a": {
       "ok": true,
       "quelle": "https://www.stetten-akm.de/gemeinde/stetten-und-bundeswehr/aktuelle-schiesswarnungen",
@@ -469,15 +482,15 @@
   "open_meteo": {
     "prognose": {
       "ok": true,
-      "abgerufen_utc": "2026-11-25T07:05:41+00:00",
-      "alter_min": 5,
+      "abgerufen_utc": "2026-11-25T09:44:54+00:00",
+      "alter_min": 16,
       "zwischenspeicher": true,
       "abruf_fehler": null
     },
     "thermik": {
       "ok": true,
-      "abgerufen_utc": "2026-11-25T07:05:41+00:00",
-      "alter_min": 5,
+      "abgerufen_utc": "2026-11-25T09:44:54+00:00",
+      "alter_min": 16,
       "zwischenspeicher": true,
       "abruf_fehler": null
     }
